@@ -1,0 +1,309 @@
+/* ================================
+   Global Design Tokens (Portfolio)
+   Calm, senior, credible
+   ================================ */
+
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Type scale */
+  --text-xs: 0.78rem;
+  --text-sm: 0.9rem;
+  --text-base: 1rem;
+  --text-lg: 1.08rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.55rem;
+  --text-3xl: 2.05rem;
+
+  /* Line heights */
+  --lh-tight: 1.15;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.65;
+
+  /* Letter spacing */
+  --tracking-tight: -0.03em;
+  --tracking-normal: -0.01em;
+
+  /* Layout */
+  --container-max: 1100px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  /* Shadows (subtle) */
+  --shadow-sm: 0 6px 16px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 26px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.10);
+
+  /* Neutral palette */
+  --bg: #ffffff;
+  --bg-alt: rgba(0, 0, 0, 0.018);
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-solid: #ffffff;
+
+  --text: rgba(0, 0, 0, 0.92);
+  --text-strong: rgba(0, 0, 0, 0.86);
+  --text-muted: rgba(0, 0, 0, 0.68);
+  --text-subtle: rgba(0, 0, 0, 0.56);
+
+  --border: rgba(0, 0, 0, 0.10);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  /* Accent (quiet, not salesy) */
+  --accent: rgba(0, 0, 0, 0.92); /* primary action */
+  --accent-hover: rgba(0, 0, 0, 1);
+
+  /* Focus / accessibility */
+  --focus: rgba(0, 0, 0, 0.35);
+
+  /* Section spacing defaults */
+  --section-y: 44px;
+  --section-y-lg: 56px;
+}
+
+/* Dark mode (optional, conservative)
+   If you don't want dark mode at all, delete this block. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0c0f;
+    --bg-alt: rgba(255, 255, 255, 0.04);
+    --surface: rgba(14, 16, 21, 0.82);
+    --surface-solid: #0f1116;
+
+    --text: rgba(255, 255, 255, 0.92);
+    --text-strong: rgba(255, 255, 255, 0.86);
+    --text-muted: rgba(255, 255, 255, 0.70);
+    --text-subtle: rgba(255, 255, 255, 0.58);
+
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+
+    --accent: rgba(255, 255, 255, 0.92);
+    --accent-hover: rgba(255, 255, 255, 1);
+
+    --focus: rgba(255, 255, 255, 0.35);
+
+    --shadow-sm: 0 10px 24px rgba(0, 0, 0, 0.55);
+    --shadow-md: 0 14px 34px rgba(0, 0, 0, 0.62);
+    --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.72);
+  }
+}
+
+/* ================================
+   Base / Reset
+   ================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-normal);
+  color: var(--text);
+  background: var(--bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Avoid unexpected margins */
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol {
+  margin: 0;
+}
+
+/* Comfortable default paragraph spacing */
+p {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  color: var(--text-muted);
+  line-height: var(--lh-relaxed);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Buttons/links focus */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Lists */
+ul,
+ol {
+  padding-left: 1.2rem;
+}
+
+/* ================================
+   Global Typography Helpers
+   ================================ */
+
+h1,
+h2,
+h3 {
+  color: var(--text-strong);
+  letter-spacing: var(--tracking-tight);
+}
+
+h1 {
+  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+  line-height: var(--lh-tight);
+}
+
+h2 {
+  font-size: var(--text-2xl);
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: var(--text-xl);
+  line-height: 1.3;
+}
+
+small {
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+}
+
+/* ================================
+   Global Layout Utilities
+   (Use across pages if you want)
+   ================================ */
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+.section {
+  padding: var(--section-y) 0;
+}
+
+.section--lg {
+  padding: var(--section-y-lg) 0;
+}
+
+.surface {
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.subtle {
+  color: var(--text-subtle);
+}
+
+/* ================================
+   Global Components (optional)
+   Keep minimal; pages can override.
+   ================================ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 650;
+  letter-spacing: var(--tracking-normal);
+  white-space: nowrap;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.button:hover {
+  text-decoration: none;
+  border-color: var(--border-strong);
+}
+
+.button--primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.button--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--space-6) 0;
+}
+
+/* ================================
+   Motion preferences
+   ================================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}

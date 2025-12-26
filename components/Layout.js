@@ -1,0 +1,134 @@
+import Link from "next/link";
+
+export default function Layout({ title, subtitle, children }) {
+  return (
+    <div className="wrap">
+      <header className="top">
+        <div className="container topInner">
+          <div className="brand">
+            <Link href="/" className="brandName">
+              William O’Connell
+            </Link>
+            <div className="brandSub">
+              AWS Technical Program Manager • Life Sciences Cloud
+            </div>
+          </div>
+
+          <nav className="nav" aria-label="Primary navigation">
+            <Link href="/life-sciences" className="navLink">Life Sciences Hub</Link>
+            <span className="navSep">·</span>
+            <Link href="/resume" className="navLink">Resume</Link>
+            <span className="navSep">·</span>
+            <Link href="/empathy-filter" className="navLink">Empathy Filter</Link>
+            <span className="navSep">·</span>
+            <a
+              href="https://www.linkedin.com/in/williamoconnell/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="navLink navCta"
+            >
+              LinkedIn
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container content">
+        <h1 className="h1">{title}</h1>
+        {subtitle ? <p className="sub">{subtitle}</p> : null}
+        <div className="body">{children}</div>
+      </main>
+
+      <style jsx>{`
+        .wrap {
+          min-height: 100vh;
+          background: #061428;
+          color: rgba(255,255,255,0.92);
+        }
+
+        .container {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 22px;
+        }
+
+        .top {
+          padding: 14px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          background: rgba(6,20,40,0.35);
+          backdrop-filter: blur(10px);
+        }
+
+        .topInner {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 18px;
+        }
+
+        .brandName {
+          font-weight: 780;
+          text-decoration: none;
+          color: rgba(255,255,255,0.95);
+        }
+
+        .brandSub {
+          margin-top: 4px;
+          font-size: 0.95rem;
+          color: rgba(255,255,255,0.68);
+        }
+
+        .nav {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.95rem;
+        }
+
+        .navLink {
+          color: rgba(255,255,255,0.86);
+          text-decoration: none;
+          padding: 6px 8px;
+          border-radius: 10px;
+        }
+
+        .navLink:hover {
+          background: rgba(255,255,255,0.08);
+        }
+
+        .navSep {
+          color: rgba(255,255,255,0.45);
+        }
+
+        .navCta {
+          border: 1px solid rgba(255,255,255,0.16);
+        }
+
+        .content {
+          padding: 34px 0 44px;
+        }
+
+        .h1 {
+          margin: 0 0 10px;
+          font-weight: 850;
+          letter-spacing: -0.02em;
+        }
+
+        .sub {
+          margin: 0 0 18px;
+          color: rgba(255,255,255,0.76);
+          max-width: 80ch;
+          line-height: 1.6;
+        }
+
+        .body {
+          background: rgba(7,14,24,0.50);
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 16px;
+          padding: 18px;
+          backdrop-filter: blur(10px);
+        }
+      `}</style>
+    </div>
+  );
+}

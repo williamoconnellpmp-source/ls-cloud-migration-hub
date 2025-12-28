@@ -1,92 +1,92 @@
-import Layout from "../components/Layout";
-import Link from "next/link";
+import Layout from "../../components/Layout";
 
 export default function Evidence() {
   return (
     <Layout title="Evidence">
       <div className="hero">
-        <div className="badge">Evidence • Validation • Inspection Readiness</div>
+        <div className="badge">Evidence • Audit-Ready Delivery</div>
 
         <div className="heroRow">
           <div>
-            <h1>Evidence & Validation</h1>
+            <h1>Evidence & Audit Readiness</h1>
             <p>
-              In regulated delivery, the goal is not only to implement controls — it’s to
-              generate evidence continuously. This section focuses on how to make auditability
-              a normal byproduct of operations rather than a fire drill.
+              In regulated environments, “done” means you can prove what changed, who approved it,
+              how it was tested, and how it is controlled in production.
             </p>
 
             <div className="callout evidence">
-              <strong>What “good” looks like:</strong> Evidence is complete, attributable, time-stamped,
-              tamper-evident, and easy to retrieve — without heroics.
+              <strong>Principle:</strong> Evidence is not a document you create at the end — it is
+              an output of your delivery system.
             </div>
           </div>
 
           <img
             className="heroImage"
             src="/images/heroes/evidence.jpg"
-            alt="Evidence-first delivery for regulated cloud workloads"
+            alt="Audit-ready evidence for GxP cloud delivery"
           />
         </div>
       </div>
 
       <section className="section">
-        <h2>Evidence Categories</h2>
-        <p>
-          Evidence typically falls into a few buckets. The key is to decide what matters for your scope
-          and automate capture wherever possible.
-        </p>
-
+        <h2>What “Good” Evidence Looks Like</h2>
         <div className="grid">
           <div className="card">
-            <h3>Identity & Access Evidence</h3>
-            <p>Prove that access is controlled, reviewed, and attributable.</p>
+            <h3>Traceability</h3>
+            <p>Requirement → risk → test → release → runtime control.</p>
             <ul className="ul">
-              <li>Access provisioning + deprovisioning records</li>
-              <li>Privileged access controls + break-glass usage</li>
-              <li>Periodic access reviews</li>
+              <li>Change request / story link</li>
+              <li>Risk-based rationale</li>
+              <li>Test results + approvals</li>
             </ul>
           </div>
 
           <div className="card">
-            <h3>Configuration & Change Evidence</h3>
-            <p>Show what changed, when it changed, who approved it, and why.</p>
+            <h3>System-Generated Where Possible</h3>
+            <p>Logs, config snapshots, and pipeline outputs beat screenshots.</p>
             <ul className="ul">
-              <li>Infrastructure versioning + approvals</li>
-              <li>Change records linked to releases</li>
-              <li>Rollback evidence + incident linkages</li>
-            </ul>
-          </div>
-
-          <div className="card">
-            <h3>Data Integrity Evidence</h3>
-            <p>Demonstrate integrity, lineage, retention, and controlled access to data.</p>
-            <ul className="ul">
-              <li>Retention policies + immutability controls</li>
-              <li>Checksums/hashes, versioning, provenance</li>
-              <li>Access logs and anomaly review</li>
-            </ul>
-          </div>
-
-          <div className="card">
-            <h3>Operational Evidence</h3>
-            <p>Prove the system is monitored, issues are handled, and outcomes are documented.</p>
-            <ul className="ul">
-              <li>Monitoring + alerting coverage</li>
-              <li>Incident and problem management records</li>
-              <li>Backup/restore and DR test evidence</li>
+              <li>CI/CD artifacts</li>
+              <li>CloudTrail / Config records</li>
+              <li>Immutable log storage</li>
             </ul>
           </div>
         </div>
+      </section>
 
-        <div className="callout gxp">
-          <strong>21 CFR Part 11 mindset:</strong> For electronic records and signatures, focus on
-          attribution, audit trails, integrity, and controlled access — and document your rationale for scope.
+      <section className="section">
+        <h2>Core Evidence Categories</h2>
+        <div className="grid">
+          <div className="card">
+            <h3>Access & Identity</h3>
+            <ul className="ul">
+              <li>Least privilege mapping</li>
+              <li>MFA / SSO enforcement</li>
+              <li>Periodic access review</li>
+            </ul>
+          </div>
+
+          <div className="card">
+            <h3>Change Control</h3>
+            <ul className="ul">
+              <li>Risk-based approvals</li>
+              <li>Release notes</li>
+              <li>Rollback evidence</li>
+            </ul>
+          </div>
+
+          <div className="card">
+            <h3>Data Integrity</h3>
+            <ul className="ul">
+              <li>Encryption at rest/in transit</li>
+              <li>Retention + immutability controls</li>
+              <li>Monitoring + alerting</li>
+            </ul>
+          </div>
         </div>
 
         <p className="small">
-          Next: Evidence becomes easier when the foundations are clear and the patterns generate proof by design.{" "}
-          <Link href="/patterns" className="cta">Back to Patterns →</Link>
+          Note: This hub is a portfolio artifact. Actual evidence requirements should align to your
+          Quality system, SOPs, and risk posture.
         </p>
       </section>
     </Layout>

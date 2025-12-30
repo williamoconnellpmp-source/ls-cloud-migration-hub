@@ -1,0 +1,15 @@
+{
+  "pk": {"S": "DOC#doc-df746304-6410-456d-b6f4-9bab54f0f85d"},
+  "sk": {"S": "METADATA"},
+  "documentId": {"S": "doc-df746304-6410-456d-b6f4-9bab54f0f85d"},
+  "status": {"S": "SUBMITTED"},
+  "createdAt": {"S": "2025-12-29T02:10:17Z"},
+  "updatedAt": {"S": "2025-12-29T02:10:17Z"},
+  "ownerUserId": {"S": "someone-else-not-you"},
+  "gsi1pk": {"S": "STATUS#SUBMITTED"},
+  "gsi1sk": {"S": "2025-12-29T02:10:17Z"},
+  "s3Bucket": {"S": "dummy-bucket"},
+  "s3Key": {"S": "dummy-key"},
+  "s3VersionId": {"NULL": true},
+  "sha256": {"S": "deadbeef"}
+}

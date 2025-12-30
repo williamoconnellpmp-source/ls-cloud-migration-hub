@@ -1,0 +1,326 @@
+{
+    "Items": [
+        {
+            "eventId": {
+                "S": "08c75c0a-d864-4ca6-9266-710bdb744164"
+            },
+            "actorUserId": {
+                "S": "anonymous"
+            },
+            "integrity": {
+                "M": {
+                    "s3VersionId": {
+                        "NULL": true
+                    },
+                    "s3Key": {
+                        "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+                    },
+                    "sha256": {
+                        "NULL": true
+                    },
+                    "s3Bucket": {
+                        "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+                    }
+                }
+            },
+            "actorUsername": {
+                "S": "anonymous"
+            },
+            "actorGroups": {
+                "L": []
+            },
+            "timestampUtc": {
+                "S": "2025-12-28T22:23:14.756742+00:00"
+            },
+            "eventType": {
+                "S": "DOC_UPLOAD_INITIATED"
+            },
+            "details": {
+                "M": {
+                    "env": {
+                        "S": "dev"
+                    },
+                    "contentType": {
+                        "S": "text/plain"
+                    },
+                    "filename": {
+                        "S": "pending2.txt"
+                    }
+                }
+            },
+            "pk": {
+                "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "sk": {
+                "S": "AUDIT#2025-12-28T22:23:14.756742+00:00#08c75c0a-d864-4ca6-9266-710bdb744164"
+            }
+        },
+        {
+            "eventId": {
+                "S": "10dfa36d-8f97-487e-94fb-e5e22159b29f"
+            },
+            "actorUserId": {
+                "S": "anonymous"
+            },
+            "integrity": {
+                "M": {
+                    "s3VersionId": {
+                        "S": "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+                    },
+                    "s3Key": {
+                        "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+                    },
+                    "sha256": {
+                        "S": "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d"
+                    },
+                    "s3Bucket": {
+                        "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+                    }
+                }
+            },
+            "actorUsername": {
+                "S": "anonymous"
+            },
+            "actorGroups": {
+                "L": []
+            },
+            "timestampUtc": {
+                "S": "2025-12-28T22:23:43.071849+00:00"
+            },
+            "eventType": {
+                "S": "DOC_SUBMITTED"
+            },
+            "details": {
+                "M": {
+                    "title": {
+                        "S": "Pending Approval Doc"
+                    },
+                    "env": {
+                        "S": "dev"
+                    }
+                }
+            },
+            "pk": {
+                "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "sk": {
+                "S": "AUDIT#2025-12-28T22:23:43.071849+00:00#10dfa36d-8f97-487e-94fb-e5e22159b29f"
+            }
+        },
+        {
+            "eventId": {
+                "S": "6f4a83fb-bb91-4c5b-8e8b-101a82a8c8b0"
+            },
+            "actorUserId": {
+                "S": "anonymous"
+            },
+            "integrity": {
+                "M": {
+                    "s3VersionId": {
+                        "S": "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+                    },
+                    "s3Key": {
+                        "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+                    },
+                    "sha256": {
+                        "S": "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d"
+                    },
+                    "s3Bucket": {
+                        "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+                    }
+                }
+            },
+            "actorUsername": {
+                "S": "anonymous"
+            },
+            "actorGroups": {
+                "L": [
+                    {
+                        "S": "Approvers"
+                    }
+                ]
+            },
+            "timestampUtc": {
+                "S": "2025-12-28T22:25:22.841405+00:00"
+            },
+            "eventType": {
+                "S": "DOC_APPROVED"
+            },
+            "details": {
+                "M": {
+                    "env": {
+                        "S": "dev"
+                    },
+                    "comment": {
+                        "S": "Approved in dev for PoC evidence."
+                    }
+                }
+            },
+            "pk": {
+                "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "sk": {
+                "S": "AUDIT#2025-12-28T22:25:22.841405+00:00#6f4a83fb-bb91-4c5b-8e8b-101a82a8c8b0"
+            }
+        },
+        {
+            "signerRole": {
+                "S": "UPLOADER"
+            },
+            "sha256": {
+                "S": "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d"
+            },
+            "s3Bucket": {
+                "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+            },
+            "documentId": {
+                "S": "b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "timestampUtc": {
+                "S": "2025-12-28T22:23:43.071849+00:00"
+            },
+            "signatureMeaning": {
+                "S": "SUBMIT"
+            },
+            "attestationText": {
+                "S": "I attest this submission is accurate and complete."
+            },
+            "signerUserId": {
+                "S": "anonymous"
+            },
+            "signerUsername": {
+                "S": "anonymous"
+            },
+            "s3VersionId": {
+                "S": "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+            },
+            "signatureId": {
+                "S": "eb089362-64b9-4812-876c-0763ef39b306"
+            },
+            "comment": {
+                "S": ""
+            },
+            "pk": {
+                "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "s3Key": {
+                "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+            },
+            "sk": {
+                "S": "ESIG#2025-12-28T22:23:43.071849+00:00#eb089362-64b9-4812-876c-0763ef39b306"
+            }
+        },
+        {
+            "signerRole": {
+                "S": "APPROVER"
+            },
+            "sha256": {
+                "S": "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d"
+            },
+            "s3Bucket": {
+                "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+            },
+            "documentId": {
+                "S": "b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "timestampUtc": {
+                "S": "2025-12-28T22:25:22.841405+00:00"
+            },
+            "signatureMeaning": {
+                "S": "APPROVE"
+            },
+            "attestationText": {
+                "S": "I approve this document for use in the validated system."
+            },
+            "signerUserId": {
+                "S": "anonymous"
+            },
+            "signerUsername": {
+                "S": "anonymous"
+            },
+            "s3VersionId": {
+                "S": "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+            },
+            "signatureId": {
+                "S": "75195275-5229-418b-beea-ef07e3634457"
+            },
+            "comment": {
+                "S": "Approved in dev for PoC evidence."
+            },
+            "pk": {
+                "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "s3Key": {
+                "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+            },
+            "sk": {
+                "S": "ESIG#2025-12-28T22:25:22.841405+00:00#75195275-5229-418b-beea-ef07e3634457"
+            }
+        },
+        {
+            "approvedAt": {
+                "S": "2025-12-28T22:25:22.841405+00:00"
+            },
+            "approvedBy": {
+                "S": "anonymous"
+            },
+            "contentType": {
+                "S": "text/plain"
+            },
+            "createdAt": {
+                "S": "2025-12-28T22:23:14.756742+00:00"
+            },
+            "description": {
+                "S": "Submitted after GSI was added."
+            },
+            "documentId": {
+                "S": "b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "gsi1pk": {
+                "S": "STATUS#APPROVED"
+            },
+            "gsi1sk": {
+                "S": "2025-12-28T22:25:22.841405+00:00"
+            },
+            "ownerUserId": {
+                "S": "anonymous"
+            },
+            "ownerUsername": {
+                "S": "anonymous"
+            },
+            "pk": {
+                "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+            },
+            "s3Bucket": {
+                "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+            },
+            "s3Key": {
+                "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+            },
+            "s3VersionId": {
+                "S": "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+            },
+            "sha256": {
+                "S": "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d"
+            },
+            "status": {
+                "S": "APPROVED"
+            },
+            "submittedAt": {
+                "S": "2025-12-28T22:23:43.071849+00:00"
+            },
+            "title": {
+                "S": "Pending Approval Doc"
+            },
+            "updatedAt": {
+                "S": "2025-12-28T22:25:22.841405+00:00"
+            },
+            "sk": {
+                "S": "METADATA"
+            }
+        }
+    ],
+    "Count": 6,
+    "ScannedCount": 6,
+    "ConsumedCapacity": null
+}

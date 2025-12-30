@@ -1,0 +1,64 @@
+{
+    "Item": {
+        "approvedAt": {
+            "S": "2025-12-28T22:25:22.841405+00:00"
+        },
+        "approvedBy": {
+            "S": "anonymous"
+        },
+        "contentType": {
+            "S": "text/plain"
+        },
+        "createdAt": {
+            "S": "2025-12-28T22:23:14.756742+00:00"
+        },
+        "description": {
+            "S": "Submitted after GSI was added."
+        },
+        "documentId": {
+            "S": "b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+        },
+        "gsi1pk": {
+            "S": "STATUS#APPROVED"
+        },
+        "gsi1sk": {
+            "S": "2025-12-28T22:25:22.841405+00:00"
+        },
+        "ownerUserId": {
+            "S": "anonymous"
+        },
+        "ownerUsername": {
+            "S": "anonymous"
+        },
+        "pk": {
+            "S": "DOC#b7d3c708-a42e-45a3-9908-06bcc268c0c4"
+        },
+        "s3Bucket": {
+            "S": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+        },
+        "s3Key": {
+            "S": "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt"
+        },
+        "s3VersionId": {
+            "S": "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+        },
+        "sha256": {
+            "S": "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d"
+        },
+        "status": {
+            "S": "APPROVED"
+        },
+        "submittedAt": {
+            "S": "2025-12-28T22:23:43.071849+00:00"
+        },
+        "title": {
+            "S": "Pending Approval Doc"
+        },
+        "updatedAt": {
+            "S": "2025-12-28T22:25:22.841405+00:00"
+        },
+        "sk": {
+            "S": "METADATA"
+        }
+    }
+}

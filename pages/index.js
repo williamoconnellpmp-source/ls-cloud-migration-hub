@@ -36,9 +36,12 @@ export default function HomePage() {
                 Resume
               </Link>
               <span className="navSep">·</span>
-              <Link href="/empathy-filter" className="navLink">
+
+              {/* IMPORTANT: point to the actual file, not the folder */}
+              <a href="/empathy-filter/index.html" className="navLink">
                 Empathy Filter
-              </Link>
+              </a>
+
               <span className="navSep">·</span>
               <a
                 href="https://www.linkedin.com/in/williamoconnell/"
@@ -101,12 +104,12 @@ export default function HomePage() {
                 <div className="cardHint">Open resume →</div>
               </Link>
 
-              {/* 4) Applied AI -> Empathy Filter */}
-              <Link href="/empathy-filter" className="card">
+              {/* 4) Applied AI -> Empathy Filter (FILE path, not folder) */}
+              <a href="/empathy-filter/index.html" className="card">
                 <div className="cardTitle">Applied AI</div>
                 <div className="cardText">Empathy Filter POC</div>
                 <div className="cardHint">Open demo →</div>
-              </Link>
+              </a>
             </div>
           </section>
         </main>

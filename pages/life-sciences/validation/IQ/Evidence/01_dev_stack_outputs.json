@@ -1,0 +1,50 @@
+[
+    {
+        "OutputKey": "RejectLambdaName",
+        "OutputValue": "vdc-reject-dev"
+    },
+    {
+        "OutputKey": "UploadInitUrl",
+        "OutputValue": "https://q4pqovera2.execute-api.us-west-2.amazonaws.com/documents/upload/init",
+        "Description": "Upload init endpoint"
+    },
+    {
+        "OutputKey": "PendingApprovalsLambdaName",
+        "OutputValue": "vdc-approvals-pending-dev"
+    },
+    {
+        "OutputKey": "DocumentsTableName",
+        "OutputValue": "VDC_Documents_dev"
+    },
+    {
+        "OutputKey": "ApiEndpoint",
+        "OutputValue": "https://q4pqovera2.execute-api.us-west-2.amazonaws.com",
+        "Description": "Base URL for VDC HTTP API"
+    },
+    {
+        "OutputKey": "SubmitLambdaName",
+        "OutputValue": "vdc-submit-dev"
+    },
+    {
+        "OutputKey": "SubmitUrl",
+        "OutputValue": "https://q4pqovera2.execute-api.us-west-2.amazonaws.com/documents/submit",
+        "Description": "Submit endpoint"
+    },
+    {
+        "OutputKey": "PendingApprovalsUrl",
+        "OutputValue": "https://q4pqovera2.execute-api.us-west-2.amazonaws.com/approvals/pending",
+        "Description": "Pending approvals endpoint"
+    },
+    {
+        "OutputKey": "DocsBucketName",
+        "OutputValue": "vdc-dev-vdcdocsbucket-nwosysacqfaf"
+    },
+    {
+        "OutputKey": "UploadInitLambdaName",
+        "OutputValue": "vdc-upload-init-dev"
+    },
+    {
+        "OutputKey": "ApproveLambdaName",
+        "OutputValue": "vdc-approve-dev"
+    }
+]

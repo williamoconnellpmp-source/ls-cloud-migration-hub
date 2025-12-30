@@ -1,0 +1,842 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "VDC Dev - Upload Init + Submit + Approvals (S3 + DDB + Lambda + HTTP API)."
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: vdc
+  EnvName:
+    Type: String
+    Default: dev
+  PresignTtlSeconds:
+    Type: Number
+    Default: 900
+  CorsAllowOrigin:
+    Type: String
+    Default: "*"
+  EnforceAuth:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+
+Resources:
+  VdcDocsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Env
+          Value: !Ref EnvName
+
+  VdcDocsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref VdcDocsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${VdcDocsBucket}"
+              - !Sub "arn:aws:s3:::${VdcDocsBucket}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  VdcDocumentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "VDC_Documents_${EnvName}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: gsi1
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Env
+          Value: !Ref EnvName
+
+  VdcLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${EnvName}-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-${EnvName}-lambda-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt VdcDocumentsTable.Arn
+                  - !Sub "${VdcDocumentsTable.Arn}/index/*"
+
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${VdcDocsBucket}/*"
+
+  # ----------------------------
+  # Upload Init Lambda (inline)
+  # ----------------------------
+  UploadInitLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-upload-init-${EnvName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DOCS_BUCKET: !Ref VdcDocsBucket
+          DDB_TABLE: !Ref VdcDocumentsTable
+          ENV_NAME: !Ref EnvName
+          PRESIGN_TTL_SECONDS: !Ref PresignTtlSeconds
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_AUTH: !Ref EnforceAuth
+      Code:
+        ZipFile: |
+          import os, json, uuid
+          from datetime import datetime, timezone
+          import boto3
+          s3 = boto3.client("s3")
+          ddb = boto3.resource("dynamodb")
+
+          def utc_now_iso():
+              return datetime.now(timezone.utc).isoformat()
+
+          def resp(code, body):
+              return {
+                  "statusCode": code,
+                  "headers": {
+                      "Content-Type": "application/json",
+                      "Access-Control-Allow-Origin": os.environ.get("CORS_ALLOW_ORIGIN","*"),
+                      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                  },
+                  "body": json.dumps(body)
+              }
+
+          def handler(event, context):
+              method = event.get("requestContext",{}).get("http",{}).get("method")
+              if method == "OPTIONS":
+                  return resp(200, {"ok": True})
+
+              bucket = os.environ["DOCS_BUCKET"]
+              table = ddb.Table(os.environ["DDB_TABLE"])
+              env_name = os.environ.get("ENV_NAME","dev")
+              ttl = int(os.environ.get("PRESIGN_TTL_SECONDS","900"))
+
+              try:
+                  body = json.loads(event.get("body") or "{}")
+              except json.JSONDecodeError:
+                  return resp(400, {"error":"Invalid JSON body"})
+
+              filename = body.get("filename")
+              content_type = body.get("contentType","application/octet-stream")
+
+              if not filename or not isinstance(filename,str):
+                  return resp(400, {"error":"filename is required"})
+
+              document_id = str(uuid.uuid4())
+              now = utc_now_iso()
+              key = f"{env_name}/documents/{document_id}/{filename}"
+
+              presigned = s3.generate_presigned_url(
+                  "put_object",
+                  Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
+                  ExpiresIn=ttl
+              )
+
+              meta = {
+                  "pk": f"DOC#{document_id}",
+                  "sk": "METADATA",
+                  "documentId": document_id,
+                  "status": "DRAFT",
+                  "s3Bucket": bucket,
+                  "s3Key": key,
+                  "s3VersionId": None,
+                  "contentType": content_type,
+                  "sha256": None,
+                  "ownerUserId": "anonymous",
+                  "ownerUsername": "anonymous",
+                  "title": None,
+                  "description": None,
+                  "createdAt": now,
+                  "updatedAt": now,
+                  "gsi1pk": "STATUS#DRAFT",
+                  "gsi1sk": now
+              }
+              table.put_item(Item=meta)
+
+              audit_id = str(uuid.uuid4())
+              audit = {
+                  "pk": f"DOC#{document_id}",
+                  "sk": f"AUDIT#{now}#{audit_id}",
+                  "eventId": audit_id,
+                  "eventType": "DOC_UPLOAD_INITIATED",
+                  "timestampUtc": now,
+                  "actorUserId": "anonymous",
+                  "actorUsername": "anonymous",
+                  "actorGroups": [],
+                  "details": {"filename": filename, "contentType": content_type, "env": env_name},
+                  "integrity": {"s3Bucket": bucket, "s3Key": key, "s3VersionId": None, "sha256": None}
+              }
+              table.put_item(Item=audit)
+
+              return resp(200, {
+                  "documentId": document_id,
+                  "upload": {"bucket": bucket, "key": key, "contentType": content_type, "presignedUrl": presigned, "expiresInSeconds": ttl}
+              })
+
+  # ----------------------------
+  # Submit Lambda (inline)
+  # ----------------------------
+  SubmitLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-submit-${EnvName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          DOCS_BUCKET: !Ref VdcDocsBucket
+          DDB_TABLE: !Ref VdcDocumentsTable
+          ENV_NAME: !Ref EnvName
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_AUTH: !Ref EnforceAuth
+      Code:
+        ZipFile: |
+          import os, json, uuid, hashlib
+          from datetime import datetime, timezone
+          import boto3
+          s3 = boto3.client("s3")
+          ddb = boto3.resource("dynamodb")
+
+          def utc_now_iso():
+              return datetime.now(timezone.utc).isoformat()
+
+          def resp(code, body):
+              return {
+                  "statusCode": code,
+                  "headers": {
+                      "Content-Type": "application/json",
+                      "Access-Control-Allow-Origin": os.environ.get("CORS_ALLOW_ORIGIN","*"),
+                      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                  },
+                  "body": json.dumps(body)
+              }
+
+          def sha256_stream(bucket, key):
+              h = hashlib.sha256()
+              obj = s3.get_object(Bucket=bucket, Key=key)
+              version_id = obj.get("VersionId")
+              body = obj["Body"]
+              for chunk in iter(lambda: body.read(1024*1024), b""):
+                  h.update(chunk)
+              return h.hexdigest(), version_id
+
+          def handler(event, context):
+              method = event.get("requestContext",{}).get("http",{}).get("method")
+              if method == "OPTIONS":
+                  return resp(200, {"ok": True})
+
+              table = ddb.Table(os.environ["DDB_TABLE"])
+              bucket = os.environ["DOCS_BUCKET"]
+              env_name = os.environ.get("ENV_NAME","dev")
+
+              try:
+                  body = json.loads(event.get("body") or "{}")
+              except json.JSONDecodeError:
+                  return resp(400, {"error":"Invalid JSON body"})
+
+              document_id = body.get("documentId")
+              title = body.get("title")
+              description = body.get("description","")
+
+              if not document_id:
+                  return resp(400, {"error":"documentId is required"})
+              if not title:
+                  return resp(400, {"error":"title is required"})
+
+              pk = f"DOC#{document_id}"
+              meta = table.get_item(Key={"pk": pk, "sk":"METADATA"}).get("Item")
+              if not meta:
+                  return resp(404, {"error":"Document not found"})
+              if meta.get("status") != "DRAFT":
+                  return resp(409, {"error": f"Must be DRAFT to submit. Current: {meta.get('status')}"})
+
+              key = meta["s3Key"]
+              try:
+                  sha, ver = sha256_stream(bucket, key)
+              except Exception as e:
+                  return resp(500, {"error": f"Failed to read S3 object: {str(e)}"})
+
+              now = utc_now_iso()
+
+              table.update_item(
+                  Key={"pk": pk, "sk":"METADATA"},
+                  UpdateExpression="SET #t=:t, #d=:d, #s=:s, updatedAt=:u, submittedAt=:sa, sha256=:h, s3VersionId=:v, gsi1pk=:gpk, gsi1sk=:gsk",
+                  ExpressionAttributeNames={"#t":"title", "#d":"description", "#s":"status"},
+                  ExpressionAttributeValues={
+                      ":t": title,
+                      ":d": description,
+                      ":s": "SUBMITTED",
+                      ":u": now,
+                      ":sa": now,
+                      ":h": sha,
+                      ":v": ver if ver else "null",
+                      ":gpk": "STATUS#SUBMITTED",
+                      ":gsk": now
+                  }
+              )
+
+              audit_id = str(uuid.uuid4())
+              table.put_item(Item={
+                  "pk": pk,
+                  "sk": f"AUDIT#{now}#{audit_id}",
+                  "eventId": audit_id,
+                  "eventType": "DOC_SUBMITTED",
+                  "timestampUtc": now,
+                  "actorUserId": "anonymous",
+                  "actorUsername": "anonymous",
+                  "actorGroups": [],
+                  "details": {"title": title, "env": env_name},
+                  "integrity": {"s3Bucket": bucket, "s3Key": key, "s3VersionId": ver, "sha256": sha}
+              })
+
+              sig_id = str(uuid.uuid4())
+              table.put_item(Item={
+                  "pk": pk,
+                  "sk": f"ESIG#{now}#{sig_id}",
+                  "signatureId": sig_id,
+                  "timestampUtc": now,
+                  "signerUserId": "anonymous",
+                  "signerUsername": "anonymous",
+                  "signerRole": "UPLOADER",
+                  "signatureMeaning": "SUBMIT",
+                  "documentId": document_id,
+                  "s3Bucket": bucket,
+                  "s3Key": key,
+                  "s3VersionId": ver,
+                  "sha256": sha,
+                  "attestationText": "I attest this submission is accurate and complete.",
+                  "comment": body.get("comment","")
+              })
+
+              return resp(200, {"documentId": document_id, "status":"SUBMITTED", "sha256": sha, "s3VersionId": ver})
+
+  # ----------------------------
+  # Approvals: Pending (GET)
+  # ----------------------------
+  PendingApprovalsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-approvals-pending-${EnvName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+      Code:
+        ZipFile: |
+          import os, json
+          import boto3
+          ddb = boto3.resource("dynamodb")
+
+          def resp(code, body):
+              return {
+                  "statusCode": code,
+                  "headers": {
+                      "Content-Type": "application/json",
+                      "Access-Control-Allow-Origin": os.environ.get("CORS_ALLOW_ORIGIN","*"),
+                      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                  },
+                  "body": json.dumps(body)
+              }
+
+          def handler(event, context):
+              method = event.get("requestContext",{}).get("http",{}).get("method")
+              if method == "OPTIONS":
+                  return resp(200, {"ok": True})
+
+              table = ddb.Table(os.environ["DDB_TABLE"])
+
+              # Query GSI for submitted docs
+              out = table.query(
+                  IndexName="gsi1",
+                  KeyConditionExpression="gsi1pk = :pk",
+                  ExpressionAttributeValues={":pk": "STATUS#SUBMITTED"}
+              )
+
+              # Return a trimmed view
+              items = []
+              for it in out.get("Items", []):
+                  if it.get("sk") != "METADATA":
+                      continue
+                  items.append({
+                      "documentId": it.get("documentId"),
+                      "title": it.get("title"),
+                      "description": it.get("description"),
+                      "submittedAt": it.get("submittedAt"),
+                      "ownerUsername": it.get("ownerUsername"),
+                      "s3Key": it.get("s3Key"),
+                      "sha256": it.get("sha256"),
+                      "s3VersionId": it.get("s3VersionId"),
+                      "status": it.get("status"),
+                  })
+              return resp(200, {"count": len(items), "items": items})
+
+  # ----------------------------
+  # Approve / Reject (POST)
+  # ----------------------------
+  ApproveLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-approve-${EnvName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 20
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENV_NAME: !Ref EnvName
+      Code:
+        ZipFile: |
+          import os, json, uuid
+          from datetime import datetime, timezone
+          import boto3
+          ddb = boto3.resource("dynamodb")
+
+          def utc_now_iso():
+              return datetime.now(timezone.utc).isoformat()
+
+          def resp(code, body):
+              return {
+                  "statusCode": code,
+                  "headers": {
+                      "Content-Type": "application/json",
+                      "Access-Control-Allow-Origin": os.environ.get("CORS_ALLOW_ORIGIN","*"),
+                      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                  },
+                  "body": json.dumps(body)
+              }
+
+          def handler(event, context):
+              method = event.get("requestContext",{}).get("http",{}).get("method")
+              if method == "OPTIONS":
+                  return resp(200, {"ok": True})
+
+              doc_id = event.get("pathParameters", {}).get("documentId")
+              if not doc_id:
+                  return resp(400, {"error":"documentId missing in path"})
+
+              table = ddb.Table(os.environ["DDB_TABLE"])
+              pk = f"DOC#{doc_id}"
+              meta = table.get_item(Key={"pk": pk, "sk":"METADATA"}).get("Item")
+              if not meta:
+                  return resp(404, {"error":"Document not found"})
+              if meta.get("status") != "SUBMITTED":
+                  return resp(409, {"error": f"Must be SUBMITTED to approve. Current: {meta.get('status')}"})
+
+              now = utc_now_iso()
+              # In Dev we use anonymous. Later: Cognito + MFA user for Approver.
+              approver_user = "anonymous"
+              approver_name = "anonymous"
+
+              # separation of duties (when real users exist)
+              if meta.get("ownerUserId") == approver_user and approver_user != "anonymous":
+                  return resp(403, {"error":"Uploader cannot approve their own document"})
+
+              body = {}
+              try:
+                  body = json.loads(event.get("body") or "{}")
+              except Exception:
+                  body = {}
+              comment = body.get("comment","")
+
+              table.update_item(
+                  Key={"pk": pk, "sk":"METADATA"},
+                  UpdateExpression="SET #s=:s, approvedAt=:a, approvedBy=:ab, updatedAt=:u, gsi1pk=:gpk, gsi1sk=:gsk",
+                  ExpressionAttributeNames={"#s":"status"},
+                  ExpressionAttributeValues={
+                      ":s":"APPROVED",
+                      ":a": now,
+                      ":ab": approver_name,
+                      ":u": now,
+                      ":gpk":"STATUS#APPROVED",
+                      ":gsk": now
+                  }
+              )
+
+              audit_id = str(uuid.uuid4())
+              table.put_item(Item={
+                  "pk": pk,
+                  "sk": f"AUDIT#{now}#{audit_id}",
+                  "eventId": audit_id,
+                  "eventType": "DOC_APPROVED",
+                  "timestampUtc": now,
+                  "actorUserId": approver_user,
+                  "actorUsername": approver_name,
+                  "actorGroups": ["Approvers"],
+                  "details": {"env": os.environ.get("ENV_NAME","dev"), "comment": comment},
+                  "integrity": {"s3Bucket": meta.get("s3Bucket"), "s3Key": meta.get("s3Key"), "s3VersionId": meta.get("s3VersionId"), "sha256": meta.get("sha256")}
+              })
+
+              sig_id = str(uuid.uuid4())
+              table.put_item(Item={
+                  "pk": pk,
+                  "sk": f"ESIG#{now}#{sig_id}",
+                  "signatureId": sig_id,
+                  "timestampUtc": now,
+                  "signerUserId": approver_user,
+                  "signerUsername": approver_name,
+                  "signerRole": "APPROVER",
+                  "signatureMeaning": "APPROVE",
+                  "documentId": doc_id,
+                  "s3Bucket": meta.get("s3Bucket"),
+                  "s3Key": meta.get("s3Key"),
+                  "s3VersionId": meta.get("s3VersionId"),
+                  "sha256": meta.get("sha256"),
+                  "attestationText": "I approve this document for use in the validated system.",
+                  "comment": comment
+              })
+
+              return resp(200, {"documentId": doc_id, "status":"APPROVED"})
+
+  RejectLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-reject-${EnvName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 20
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENV_NAME: !Ref EnvName
+      Code:
+        ZipFile: |
+          import os, json, uuid
+          from datetime import datetime, timezone
+          import boto3
+          ddb = boto3.resource("dynamodb")
+
+          def utc_now_iso():
+              return datetime.now(timezone.utc).isoformat()
+
+          def resp(code, body):
+              return {
+                  "statusCode": code,
+                  "headers": {
+                      "Content-Type": "application/json",
+                      "Access-Control-Allow-Origin": os.environ.get("CORS_ALLOW_ORIGIN","*"),
+                      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                  },
+                  "body": json.dumps(body)
+              }
+
+          def handler(event, context):
+              method = event.get("requestContext",{}).get("http",{}).get("method")
+              if method == "OPTIONS":
+                  return resp(200, {"ok": True})
+
+              doc_id = event.get("pathParameters", {}).get("documentId")
+              if not doc_id:
+                  return resp(400, {"error":"documentId missing in path"})
+
+              table = ddb.Table(os.environ["DDB_TABLE"])
+              pk = f"DOC#{doc_id}"
+              meta = table.get_item(Key={"pk": pk, "sk":"METADATA"}).get("Item")
+              if not meta:
+                  return resp(404, {"error":"Document not found"})
+              if meta.get("status") != "SUBMITTED":
+                  return resp(409, {"error": f"Must be SUBMITTED to reject. Current: {meta.get('status')}"})
+
+              now = utc_now_iso()
+              approver_user = "anonymous"
+              approver_name = "anonymous"
+
+              try:
+                  body = json.loads(event.get("body") or "{}")
+              except Exception:
+                  body = {}
+              comment = body.get("comment")
+              if not comment:
+                  return resp(400, {"error":"comment is required for rejection"})
+
+              table.update_item(
+                  Key={"pk": pk, "sk":"METADATA"},
+                  UpdateExpression="SET #s=:s, rejectedAt=:r, rejectedBy=:rb, updatedAt=:u, gsi1pk=:gpk, gsi1sk=:gsk",
+                  ExpressionAttributeNames={"#s":"status"},
+                  ExpressionAttributeValues={
+                      ":s":"REJECTED",
+                      ":r": now,
+                      ":rb": approver_name,
+                      ":u": now,
+                      ":gpk":"STATUS#REJECTED",
+                      ":gsk": now
+                  }
+              )
+
+              audit_id = str(uuid.uuid4())
+              table.put_item(Item={
+                  "pk": pk,
+                  "sk": f"AUDIT#{now}#{audit_id}",
+                  "eventId": audit_id,
+                  "eventType": "DOC_REJECTED",
+                  "timestampUtc": now,
+                  "actorUserId": approver_user,
+                  "actorUsername": approver_name,
+                  "actorGroups": ["Approvers"],
+                  "details": {"env": os.environ.get("ENV_NAME","dev"), "comment": comment},
+                  "integrity": {"s3Bucket": meta.get("s3Bucket"), "s3Key": meta.get("s3Key"), "s3VersionId": meta.get("s3VersionId"), "sha256": meta.get("sha256")}
+              })
+
+              return resp(200, {"documentId": doc_id, "status":"REJECTED"})
+
+  # ----------------------------
+  # HTTP API Gateway + routes
+  # ----------------------------
+  VdcHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${ProjectName}-api-${EnvName}"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref CorsAllowOrigin
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        MaxAge: 86400
+
+  UploadInitIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt UploadInitLambda.Arn
+      PayloadFormatVersion: "2.0"
+
+  UploadInitRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /documents/upload/init"
+      Target: !Sub "integrations/${UploadInitIntegration}"
+
+  SubmitIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SubmitLambda.Arn
+      PayloadFormatVersion: "2.0"
+
+  SubmitRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /documents/submit"
+      Target: !Sub "integrations/${SubmitIntegration}"
+
+  PendingApprovalsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt PendingApprovalsLambda.Arn
+      PayloadFormatVersion: "2.0"
+
+  PendingApprovalsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "GET /approvals/pending"
+      Target: !Sub "integrations/${PendingApprovalsIntegration}"
+
+  ApproveIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApproveLambda.Arn
+      PayloadFormatVersion: "2.0"
+
+  ApproveRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /approvals/{documentId}/approve"
+      Target: !Sub "integrations/${ApproveIntegration}"
+
+  RejectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt RejectLambda.Arn
+      PayloadFormatVersion: "2.0"
+
+  RejectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /approvals/{documentId}/reject"
+      Target: !Sub "integrations/${RejectIntegration}"
+
+  VdcApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      StageName: "$default"
+      AutoDeploy: true
+
+  UploadInitLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UploadInitLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*/documents/upload/init"
+
+  SubmitLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SubmitLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*/documents/submit"
+
+  PendingApprovalsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PendingApprovalsLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*/approvals/pending"
+
+  ApproveLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApproveLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*/approvals/*/approve"
+
+  RejectLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RejectLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*/approvals/*/reject"
+
+Outputs:
+  ApiEndpoint:
+    Description: "Base URL for VDC HTTP API"
+    Value: !Sub "https://${VdcHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  UploadInitUrl:
+    Description: "Upload init endpoint"
+    Value: !Sub "https://${VdcHttpApi}.execute-api.${AWS::Region}.amazonaws.com/documents/upload/init"
+  SubmitUrl:
+    Description: "Submit endpoint"
+    Value: !Sub "https://${VdcHttpApi}.execute-api.${AWS::Region}.amazonaws.com/documents/submit"
+  PendingApprovalsUrl:
+    Description: "Pending approvals endpoint"
+    Value: !Sub "https://${VdcHttpApi}.execute-api.${AWS::Region}.amazonaws.com/approvals/pending"
+  DocsBucketName:
+    Value: !Ref VdcDocsBucket
+  DocumentsTableName:
+    Value: !Ref VdcDocumentsTable
+  UploadInitLambdaName:
+    Value: !Ref UploadInitLambda
+  SubmitLambdaName:
+    Value: !Ref SubmitLambda
+  PendingApprovalsLambdaName:
+    Value: !Ref PendingApprovalsLambda
+  ApproveLambdaName:
+    Value: !Ref ApproveLambda
+  RejectLambdaName:
+    Value: !Ref RejectLambda

@@ -1,0 +1,11 @@
+{
+    "documentId":  "b7d3c708-a42e-45a3-9908-06bcc268c0c4",
+    "title":  "Pending Approval Doc",
+    "status":  "APPROVED",
+    "approvedAt":  "2025-12-28T22:25:22.841405+00:00",
+    "approvedBy":  "anonymous",
+    "sha256":  "42be6e8687df3f95e593018d07ee547c323dc6af3aedcf6e96ce9b3354ca061d",
+    "s3Bucket":  "vdc-dev-vdcdocsbucket-nwosysacqfaf",
+    "s3Key":  "dev/documents/b7d3c708-a42e-45a3-9908-06bcc268c0c4/pending2.txt",
+    "s3VersionId":  "v6zBntrUIU5K_UOlk3UUAO6Uln2DZziW"
+}

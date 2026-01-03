@@ -6,6 +6,7 @@ import { getTokens, getUserGroupsFromIdToken, requireAuthOrRedirect } from "../_
 
 const APPROVE_ATTESTATION = "I approve this document for use in the validated system.";
 const REJECT_RULE = "Rejection requires a documented reason (comment).";
+const REJECT_COMMENT_REQUIRED_MSG = "Rejection requires a comment.";
 
 function filenameFromItem(it) {
   if (it?.originalFilename) return it.originalFilename;
@@ -78,11 +79,8 @@ export default function ApprovalDetailPage() {
       const data = await apiFetch(`/documents/${id}/download`, { method: "GET" });
 
       const url = data?.downloadUrl;
-      if (!url) {
-        throw new Error("Download URL was not returned by the server.");
-      }
+      if (!url) throw new Error("Download URL was not returned by the server.");
 
-      // Open in a new tab for review
       window.open(url, "_blank", "noopener,noreferrer");
       setStatusMsg(null);
     } catch (e) {
@@ -95,12 +93,14 @@ export default function ApprovalDetailPage() {
     setActionBusy(true);
     setError(null);
     setStatusMsg(null);
+
     try {
       setStatusMsg("Submitting approval…");
       await apiFetch(`/approvals/${id}/approve`, {
         method: "POST",
         body: JSON.stringify({ comment: comment || "" }),
       });
+
       setStatusMsg("Approved. Returning to pending list…");
       setTimeout(() => router.push("/life-sciences/app/approval/approvals"), 700);
     } catch (e) {
@@ -112,19 +112,23 @@ export default function ApprovalDetailPage() {
   }
 
   async function doReject() {
-    setActionBusy(true);
     setError(null);
     setStatusMsg(null);
+
+    if (!comment.trim()) {
+      setError(REJECT_COMMENT_REQUIRED_MSG);
+      return;
+    }
+
+    setActionBusy(true);
+
     try {
-      if (!comment.trim()) {
-        setError("Rejection requires a comment.");
-        return;
-      }
       setStatusMsg("Submitting rejection…");
       await apiFetch(`/approvals/${id}/reject`, {
         method: "POST",
         body: JSON.stringify({ comment: comment.trim() }),
       });
+
       setStatusMsg("Rejected. Returning to pending list…");
       setTimeout(() => router.push("/life-sciences/app/approval/approvals"), 700);
     } catch (e) {
@@ -221,13 +225,25 @@ export default function ApprovalDetailPage() {
 
           <label style={{ display: "grid", gap: "0.25rem", marginTop: "0.75rem" }}>
             Comment (required for rejection)
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
+            <textarea
+              value={comment}
+              onChange={(e) => {
+                const v = e.target.value;
+                setComment(v);
+
+                // If the only problem was "comment required", clear it as soon as user types
+                if (error === REJECT_COMMENT_REQUIRED_MSG && v.trim().length > 0) {
+                  setError(null);
+                }
+              }}
+              rows={3}
+            />
           </label>
 
           <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
             <button
               type="button"
-              disabled={actionBusy || Boolean(error) || !doc}
+              disabled={actionBusy || !doc}
               onClick={doApprove}
               style={{ padding: "0.75rem 1rem" }}
             >
@@ -235,7 +251,7 @@ export default function ApprovalDetailPage() {
             </button>
             <button
               type="button"
-              disabled={actionBusy || Boolean(error) || !doc}
+              disabled={actionBusy || !doc}
               onClick={doReject}
               style={{ padding: "0.75rem 1rem" }}
             >

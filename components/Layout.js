@@ -10,17 +10,33 @@ export default function Layout({ title, subtitle, children }) {
               William O’Connell
             </Link>
             <div className="brandSub">
-              AWS Technical Program Manager • Life Sciences Cloud
+              AWS Solutions Architect + Technical Program Manager • Life Sciences / Regulated Cloud
             </div>
           </div>
 
           <nav className="nav" aria-label="Primary navigation">
-            <Link href="/life-sciences" className="navLink">Life Sciences Hub</Link>
+            <Link href="/life-sciences/app" className="navLink navStrong">
+              VDC Demo
+            </Link>
             <span className="navSep">·</span>
-            <Link href="/resume" className="navLink">Resume</Link>
+
+            <Link href="/life-sciences/evidence" className="navLink">
+              Evidence
+            </Link>
             <span className="navSep">·</span>
-            <Link href="/empathy-filter" className="navLink">Empathy Filter</Link>
+
+            <Link href="/resume" className="navLink">
+              Resume
+            </Link>
             <span className="navSep">·</span>
+
+            {/* Static export requires file path */}
+            <a href="/empathy-filter/index.html" className="navLink">
+              AI POC
+            </a>
+
+            <span className="navSep">·</span>
+
             <a
               href="https://www.linkedin.com/in/williamoconnell/"
               target="_blank"
@@ -52,6 +68,7 @@ export default function Layout({ title, subtitle, children }) {
           padding: 0 22px;
         }
 
+        /* Header */
         .top {
           padding: 14px 0;
           border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -78,11 +95,14 @@ export default function Layout({ title, subtitle, children }) {
           color: rgba(255,255,255,0.68);
         }
 
+        /* Navigation */
         .nav {
           display: flex;
           align-items: center;
           gap: 10px;
           font-size: 0.95rem;
+          flex-wrap: wrap;
+          justify-content: flex-end;
         }
 
         .navLink {
@@ -104,6 +124,13 @@ export default function Layout({ title, subtitle, children }) {
           border: 1px solid rgba(255,255,255,0.16);
         }
 
+        /* Primary proof emphasis */
+        .navStrong {
+          border: 1px solid rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.06);
+        }
+
+        /* Content */
         .content {
           padding: 34px 0 44px;
         }

@@ -1,3 +1,5 @@
+// pages/life-sciences/app/login.js
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { CONFIG } from "./_lib/config";
@@ -9,10 +11,25 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Cognito redirects here with ?code=...
-    const code = router.query.code;
-
     if (!router.isReady) return;
+
+    // Cognito redirects here with ?code=...
+    // We also support a friendly logout redirect:
+    // /life-sciences/app/login?logged_out=1
+    const code = router.query.code;
+    const loggedOut =
+      router.query.logged_out === "1" ||
+      router.query.logged_out === "true" ||
+      router.query.logged_out === "yes";
+
+    // If this is a logout redirect, show a friendly message + sign-in link
+    if (loggedOut && !code) {
+      setError(null);
+      setStatus("Thank you. You have been logged out. To log in again, please click below.");
+      return;
+    }
+
+    // If no auth code and not a logout redirect, show sign-in prompt
     if (!code) {
       setStatus("No authorization code found. Please sign in.");
       return;
@@ -20,6 +37,7 @@ export default function LoginPage() {
 
     const exchange = async () => {
       try {
+        setError(null);
         setStatus("Exchanging authorization code for tokens...");
 
         const tokenUrl = `${CONFIG.cognitoDomain}/oauth2/token`;
@@ -62,12 +80,20 @@ export default function LoginPage() {
     };
 
     exchange();
-  }, [router.isReady, router.query.code]);
+  }, [router.isReady, router.query.code, router.query.logged_out]);
+
+  const showSignInLink = true; // always show a clear way to sign in again
 
   return (
     <div style={{ padding: "2rem", maxWidth: 760 }}>
       <h1 style={{ marginBottom: "0.5rem" }}>Validated Document Control</h1>
       <p style={{ marginTop: 0, color: "#444" }}>{status}</p>
+
+      {showSignInLink && !error && (
+        <div style={{ marginTop: "1rem" }}>
+          <a href={buildLoginUrl()}>Sign in</a>
+        </div>
+      )}
 
       {error && (
         <div style={{ marginTop: "1rem", padding: "1rem", border: "1px solid #ccc" }}>

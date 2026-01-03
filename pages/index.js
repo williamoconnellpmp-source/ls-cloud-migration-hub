@@ -1,3 +1,4 @@
+// pages/index.js
 import Link from "next/link";
 import Head from "next/head";
 
@@ -5,10 +6,10 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>William O’Connell | AWS TPM | Life Sciences Cloud Transformations</title>
+        <title>William O’Connell | AWS TPM | Life Sciences Cloud</title>
         <meta
           name="description"
-          content="AWS Technical Program Manager focused on regulated Life Sciences cloud transformations. AWS Solutions Architect – Associate. GxP / 21 CFR Part 11 delivery. Applied AI POC."
+          content="AWS Technical Program Manager focused on regulated Life Sciences cloud delivery. GxP / 21 CFR Part 11 background. 14 years Roche / Genentech. AWS Certified Solutions Architect."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
@@ -19,39 +20,21 @@ export default function HomePage() {
 
         {/* Header */}
         <header className="header">
-          <div className="container headerInner">
+          <div className="container">
             <div className="brand">
               <div className="brandName">William O’Connell</div>
               <div className="brandSub">
-                AWS Technical Program Manager • Life Sciences Cloud
+                Seattle, WA | (206) 551-5524 | WilliamOConnellPMP@gmail.com |{" "}
+                <a
+                  href="https://www.linkedin.com/in/williamoconnell/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inlineLink"
+                >
+                  LinkedIn
+                </a>
               </div>
             </div>
-
-            <nav className="nav" aria-label="Primary navigation">
-              <Link href="/life-sciences" className="navLink">
-                Life Sciences Hub
-              </Link>
-              <span className="navSep">·</span>
-              <Link href="/resume" className="navLink">
-                Resume
-              </Link>
-              <span className="navSep">·</span>
-
-              {/* IMPORTANT: point to the actual file, not the folder */}
-              <a href="/empathy-filter/index.html" className="navLink">
-                Empathy Filter
-              </a>
-
-              <span className="navSep">·</span>
-              <a
-                href="https://www.linkedin.com/in/williamoconnell/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="navLink navCta"
-              >
-                LinkedIn
-              </a>
-            </nav>
           </div>
         </header>
 
@@ -61,55 +44,84 @@ export default function HomePage() {
             <div className="container">
               <h1 className="h1">
                 <span className="h1Line1">AWS Technical Program Manager</span>
-                <span className="h1Line2">Life Sciences Cloud Transformations</span>
+                <span className="h1Line2">
+                  Life Sciences Cloud Transformations
+                </span>
               </h1>
 
               <p className="lead">
-                I lead regulated, cross-functional programs that move complex platforms to the cloud—safely,
-                predictably, and with evidence.
+                I lead regulated, cross-functional programs that move complex
+                platforms to the cloud — safely, predictably, and with evidence.
               </p>
 
               <p className="lead2">
-                GxP / 21 CFR Part 11 delivery background, now AWS-certified and current.
+                GxP / 21 CFR Part 11 delivery background, 14 years with Roche /
+                Genentech, now AWS Certified Solutions Architect
               </p>
             </div>
           </section>
 
-          {/* Cards (wired) */}
-          <section className="cardsSection" aria-label="Credibility highlights">
-            <div className="container cardsGrid">
-              {/* 1) AWS Certified -> Credly */}
-              <a
-                href="https://www.credly.com/badges/ced60bdc-c683-4a9a-b9e6-60bcb086fa70/linked_in_profile"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="card"
-              >
-                <div className="cardTitle">AWS Certified</div>
-                <div className="cardText">Solutions Architect – Associate</div>
-                <div className="cardHint">View badge →</div>
-              </a>
+          {/* Four Boxes */}
+          <section
+            className="cardsSection"
+            aria-label="Primary proof and links"
+          >
+            <div className="cardsContainer">
+              <div className="cardsGrid">
+                {/* 1 — VDC Demo */}
+                <Link href="/vdc" passHref legacyBehavior>
+                  <a className="card">
+                    <div className="cardTitle">VDC Demo</div>
+                    <div className="cardText">
+                      Validated Document Control
+                      <br />
+                      (AWS &amp; GxP workflow)
+                    </div>
+                    <div className="cardHint">Open demo →</div>
+                  </a>
+                </Link>
 
-              {/* 2) Regulated Delivery -> Migration Hub (evidence) */}
-              <Link href="/life-sciences/evidence" className="card">
-                <div className="cardTitle">Regulated Delivery</div>
-                <div className="cardText">GxP • 21 CFR Part 11 • CSV</div>
-                <div className="cardHint">Open evidence →</div>
-              </Link>
+                {/* 2 — Regulated Delivery */}
+                <Link href="/life-sciences/evidence" passHref legacyBehavior>
+                  <a className="card">
+                    <div className="cardTitle">Regulated Delivery</div>
+                    <div className="cardText">GxP • 21 CFR Part 11 • CSV</div>
+                    <div className="cardHint">Open evidence →</div>
+                  </a>
+                </Link>
 
-              {/* 3) TPM Signal -> Resume */}
-              <Link href="/resume" className="card">
-                <div className="cardTitle">TPM Signal</div>
-                <div className="cardText">Programs, Roadmaps, Risks, Governance</div>
-                <div className="cardHint">Open resume →</div>
-              </Link>
+                {/* 3 — Empathy Filter (subdomain on Vercel) */}
+                <a
+                  href="https://empathy.williamoconnellpmp.com/about"
+                  className="card"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="cardTitle">Empathy Filter</div>
+                  <div className="cardText">AI POC (Applied AI)</div>
+                  <div className="cardHint">Open demo →</div>
+                </a>
 
-              {/* 4) Applied AI -> Empathy Filter (FILE path, not folder) */}
-              <a href="/empathy-filter/index.html" className="card">
-                <div className="cardTitle">Applied AI</div>
-                <div className="cardText">Empathy Filter POC</div>
-                <div className="cardHint">Open demo →</div>
-              </a>
+                {/* 4 — Links only */}
+                <div
+                  className="card cardLinks"
+                  role="group"
+                  aria-label="Resume and external links"
+                >
+                  <Link href="/resume" passHref legacyBehavior>
+                    <a className="linkItem">Resume →</a>
+                  </Link>
+
+                  <a
+                    href="https://www.credly.com/badges/ced60bdc-c683-4a9a-b9e6-60bcb086fa70/linked_in_profile"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="linkItem"
+                  >
+                    AWS Certification →
+                  </a>
+                </div>
+              </div>
             </div>
           </section>
         </main>
@@ -119,20 +131,19 @@ export default function HomePage() {
             min-height: 100vh;
             position: relative;
             background: #061428;
-            color: rgba(255, 255, 255, 0.92);
+            color: #fff;
           }
 
           .heroBg {
             position: absolute;
             inset: 0;
-            background-image:
-              linear-gradient(
+            background-image: linear-gradient(
                 180deg,
                 rgba(5, 12, 22, 0.96) 0%,
                 rgba(5, 12, 22, 0.88) 30%,
-                rgba(5, 12, 22, 0.70) 55%,
+                rgba(5, 12, 22, 0.7) 55%,
                 rgba(5, 12, 22, 0.45) 75%,
-                rgba(5, 12, 22, 0.30) 100%
+                rgba(5, 12, 22, 0.3) 100%
               ),
               url("/images/heroes/landing-gxp.png");
             background-size: cover;
@@ -143,6 +154,8 @@ export default function HomePage() {
             max-width: 1100px;
             margin: 0 auto;
             padding: 0 22px;
+            position: relative;
+            z-index: 2;
           }
 
           /* Header */
@@ -152,45 +165,26 @@ export default function HomePage() {
             padding: 14px 0;
           }
 
-          .headerInner {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-
           .brandName {
             font-weight: 750;
+            color: #fff;
           }
 
           .brandSub {
+            margin-top: 4px;
             font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.68);
+            color: rgba(255, 255, 255, 0.72);
           }
 
-          .nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.95rem;
-          }
-
-          .navLink {
-            color: rgba(255, 255, 255, 0.86);
+          .inlineLink {
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
-            padding: 6px 8px;
-            border-radius: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+            padding-bottom: 1px;
           }
 
-          .navLink:hover {
-            background: rgba(255, 255, 255, 0.08);
-          }
-
-          .navSep {
-            color: rgba(255, 255, 255, 0.45);
-          }
-
-          .navCta {
-            border: 1px solid rgba(255, 255, 255, 0.16);
+          .inlineLink:hover {
+            border-bottom-color: rgba(255, 255, 255, 0.7);
           }
 
           /* Hero */
@@ -204,6 +198,7 @@ export default function HomePage() {
             margin: 0 0 12px;
             font-weight: 850;
             letter-spacing: -0.03em;
+            color: #fff;
           }
 
           .h1Line1 {
@@ -225,8 +220,8 @@ export default function HomePage() {
           .lead2 {
             font-size: 1.05rem;
             line-height: 1.6;
-            color: rgba(255, 255, 255, 0.82);
-            max-width: 72ch;
+            max-width: 95ch; /* widened so lines wrap less */
+            color: rgba(255, 255, 255, 0.86);
           }
 
           .lead {
@@ -238,56 +233,91 @@ export default function HomePage() {
             position: relative;
             z-index: 2;
             margin-top: 56px;
-            padding-bottom: 40px;
+            padding-bottom: 44px;
+          }
+
+          .cardsContainer {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 22px;
           }
 
           .cardsGrid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            align-items: stretch;
           }
 
           .card {
-            padding: 20px;
+            background: rgba(7, 14, 24, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.22);
             border-radius: 16px;
-            background: rgba(7, 14, 24, 0.62);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            backdrop-filter: blur(10px);
-            text-align: center;
-            min-height: 120px;
+            padding: 22px;
+            min-height: 150px;
 
             text-decoration: none;
-            color: inherit;
+            color: #fff;
+
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+
+            backdrop-filter: blur(10px);
+            box-sizing: border-box;
           }
 
           .card:hover {
-            border-color: rgba(255, 255, 255, 0.22);
-            background: rgba(7, 14, 24, 0.70);
+            background: rgba(7, 14, 24, 0.8);
+            border-color: rgba(255, 255, 255, 0.3);
           }
 
           .cardTitle {
             font-weight: 800;
             margin-bottom: 8px;
+            text-align: center;
+            color: #fff;
           }
 
           .cardText {
-            color: rgba(255, 255, 255, 0.72);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.78);
             line-height: 1.45;
           }
 
           .cardHint {
             margin-top: 10px;
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.62);
-            font-weight: 750;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 700;
+            text-align: center;
+          }
+
+          /* Box 4 links only */
+          .cardLinks {
+            gap: 10px;
+          }
+
+          .linkItem {
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+          }
+
+          .linkItem:hover {
+            text-decoration: underline;
           }
 
           @media (max-width: 980px) {
             .cardsGrid {
               grid-template-columns: repeat(2, 1fr);
+            }
+            .h1Line1,
+            .h1Line2 {
+              white-space: normal;
             }
           }
 

@@ -5,7 +5,9 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>William O’Connell | AWS TPM | Life Sciences Cloud Transformations</title>
+        <title>
+          William O’Connell | AWS TPM | Life Sciences Cloud Transformations
+        </title>
         <meta
           name="description"
           content="AWS Technical Program Manager focused on regulated Life Sciences cloud transformations. AWS Solutions Architect – Associate. GxP / 21 CFR Part 11 delivery. Applied AI POC."
@@ -36,9 +38,17 @@ export default function HomePage() {
                 Resume
               </Link>
               <span className="navSep">·</span>
-              <Link href="/empathy-filter" className="navLink">
+
+              {/* Empathy Filter -> Vercel subdomain About */}
+              <a
+                href="https://empathy.williamoconnellpmp.com/about"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navLink"
+              >
                 Empathy Filter
-              </Link>
+              </a>
+
               <span className="navSep">·</span>
               <a
                 href="https://www.linkedin.com/in/williamoconnell/"
@@ -58,16 +68,19 @@ export default function HomePage() {
             <div className="container">
               <h1 className="h1">
                 <span className="h1Line1">AWS Technical Program Manager</span>
-                <span className="h1Line2">Life Sciences Cloud Transformations</span>
+                <span className="h1Line2">
+                  Life Sciences Cloud Transformations
+                </span>
               </h1>
 
               <p className="lead">
-                I lead regulated, cross-functional programs that move complex platforms to the cloud—safely,
-                predictably, and with evidence.
+                I lead regulated, cross-functional programs that move complex
+                platforms to the cloud—safely, predictably, and with evidence.
               </p>
 
               <p className="lead2">
-                GxP / 21 CFR Part 11 delivery background, now AWS-certified and current.
+                GxP / 21 CFR Part 11 delivery background, now AWS-certified and
+                current.
               </p>
             </div>
           </section>
@@ -97,16 +110,23 @@ export default function HomePage() {
               {/* 3) TPM Signal -> Resume */}
               <Link href="/resume" className="card">
                 <div className="cardTitle">TPM Signal</div>
-                <div className="cardText">Programs, Roadmaps, Risks, Governance</div>
+                <div className="cardText">
+                  Programs, Roadmaps, Risks, Governance
+                </div>
                 <div className="cardHint">Open resume →</div>
               </Link>
 
-              {/* 4) Applied AI -> Empathy Filter */}
-              <Link href="/empathy-filter" className="card">
+              {/* 4) Applied AI -> Empathy Filter About (Vercel subdomain) */}
+              <a
+                href="https://empathy.williamoconnellpmp.com/about"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="card"
+              >
                 <div className="cardTitle">Applied AI</div>
                 <div className="cardText">Empathy Filter POC</div>
-                <div className="cardHint">Open demo →</div>
-              </Link>
+                <div className="cardHint">Open →</div>
+              </a>
             </div>
           </section>
         </main>
@@ -122,14 +142,13 @@ export default function HomePage() {
           .heroBg {
             position: absolute;
             inset: 0;
-            background-image:
-              linear-gradient(
+            background-image: linear-gradient(
                 180deg,
                 rgba(5, 12, 22, 0.96) 0%,
                 rgba(5, 12, 22, 0.88) 30%,
-                rgba(5, 12, 22, 0.70) 55%,
+                rgba(5, 12, 22, 0.7) 55%,
                 rgba(5, 12, 22, 0.45) 75%,
-                rgba(5, 12, 22, 0.30) 100%
+                rgba(5, 12, 22, 0.3) 100%
               ),
               url("/images/heroes/landing-gxp.png");
             background-size: cover;
@@ -262,7 +281,7 @@ export default function HomePage() {
 
           .card:hover {
             border-color: rgba(255, 255, 255, 0.22);
-            background: rgba(7, 14, 24, 0.70);
+            background: rgba(7, 14, 24, 0.7);
           }
 
           .cardTitle {

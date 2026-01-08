@@ -1,0 +1,692 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "VDC PROD App (API, Lambdas, DDB, S3 Docs + S3 WORM Audit)"
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    AllowedValues: ["prod"]
+    Default: "prod"
+
+  ProjectName:
+    Type: String
+    Default: "vdc"
+
+  CognitoIssuerUrl:
+    Type: String
+    Description: "From vdc-prod-identity output CognitoIssuerUrl"
+
+  CognitoClientId:
+    Type: String
+    Description: "From vdc-prod-identity output CognitoAppClientId"
+
+  # Artifact bucket where deploy-prod.ps1 uploads Lambda ZIPs
+  LambdaArtifactsBucket:
+    Type: String
+    Description: "S3 bucket that stores Lambda ZIP artifacts for deployment"
+
+  LambdaArtifactsPrefix:
+    Type: String
+    Default: "vdc/prod"
+    Description: "Prefix in the artifacts bucket for Lambda ZIPs"
+
+  CorsAllowOrigin:
+    Type: String
+    Default: "*"
+
+  EnforceApproverMfa:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+    Description: "Start false. Flip to true after smoke test."
+
+  # WORM audit settings
+  AuditWormEnabled:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+
+  AuditWormMode:
+    Type: String
+    AllowedValues: ["COMPLIANCE", "GOVERNANCE"]
+    Default: "COMPLIANCE"
+
+  AuditWormRetentionDays:
+    Type: Number
+    Default: 90
+
+Resources:
+  # -----------------------
+  # S3 Docs Bucket
+  # -----------------------
+  VdcDocsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${EnvironmentName}-vdcdocs-${AWS::AccountId}-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+
+  VdcDocsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref VdcDocsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Only allow Lambdas to read/write objects; downloads are via presigned URLs created by Lambda
+          - Sid: AllowLambdaAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt VdcLambdaRole.Arn
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:AbortMultipartUpload
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${VdcDocsBucket}"
+              - !Sub "arn:aws:s3:::${VdcDocsBucket}/*"
+
+  # -----------------------
+  # S3 Audit WORM Bucket (Object Lock)
+  # -----------------------
+  VdcAuditWormBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${EnvironmentName}-audit-worm-${AWS::AccountId}-${AWS::Region}"
+      ObjectLockEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      ObjectLockConfiguration:
+        ObjectLockEnabled: Enabled
+        Rule:
+          DefaultRetention:
+            Mode: !Ref AuditWormMode
+            Days: !Ref AuditWormRetentionDays
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+
+  # -----------------------
+  # DynamoDB Tables
+  # -----------------------
+  VdcDocumentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "VDC_Documents_${EnvironmentName}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: gsi1
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  VdcAuditTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "VDC_Audit_${EnvironmentName}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: docId
+          AttributeType: S
+        - AttributeName: eventKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: docId
+          KeyType: HASH
+        - AttributeName: eventKey
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # -----------------------
+  # IAM Role (Least privilege)
+  # -----------------------
+  VdcLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-lambda-${EnvironmentName}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-lambda-policy-${EnvironmentName}"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # CloudWatch logs
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+              # Documents table: read/write (app needs it)
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt VdcDocumentsTable.Arn
+                  - !Sub "${VdcDocumentsTable.Arn}/index/*"
+
+              # Audit table: APPEND-ONLY + query (no Update/Delete allowed)
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:GetItem
+                Resource: !GetAtt VdcAuditTable.Arn
+
+              # S3 docs bucket access
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${VdcDocsBucket}"
+                  - !Sub "arn:aws:s3:::${VdcDocsBucket}/*"
+
+              # S3 audit WORM bucket writes
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${VdcAuditWormBucket}"
+                  - !Sub "arn:aws:s3:::${VdcAuditWormBucket}/*"
+
+  # -----------------------
+  # Lambda Functions (8)
+  # -----------------------
+  UploadInitLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-upload-init-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DOCS_BUCKET: !Ref VdcDocsBucket
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          ENV_NAME: !Ref EnvironmentName
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_APPROVER_MFA: !Ref EnforceApproverMfa
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-upload-init.zip"
+
+  SubmitLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-submit-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DOCS_BUCKET: !Ref VdcDocsBucket
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          ENV_NAME: !Ref EnvironmentName
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_APPROVER_MFA: !Ref EnforceApproverMfa
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-submit.zip"
+
+  PendingApprovalsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-approvals-pending-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_APPROVER_MFA: !Ref EnforceApproverMfa
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-approvals-pending.zip"
+
+  ApproveLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-approve-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          ENV_NAME: !Ref EnvironmentName
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_APPROVER_MFA: !Ref EnforceApproverMfa
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-approve.zip"
+
+  RejectLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-reject-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          ENV_NAME: !Ref EnvironmentName
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_APPROVER_MFA: !Ref EnforceApproverMfa
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-reject.zip"
+
+  DownloadLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-download-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+          ENFORCE_APPROVER_MFA: !Ref EnforceApproverMfa
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-download.zip"
+
+  DocumentsListLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-documents-list-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-documents-list.zip"
+
+  DocumentAuditLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-document-audit-${EnvironmentName}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt VdcLambdaRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref VdcDocumentsTable
+          AUDIT_TABLE: !Ref VdcAuditTable
+          AUDIT_WORM_BUCKET: !Ref VdcAuditWormBucket
+          AUDIT_WORM_PREFIX: !Sub "audit/${EnvironmentName}"
+          CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub "${LambdaArtifactsPrefix}/vdc-document-audit.zip"
+
+  # -----------------------
+  # API Gateway HTTP API + JWT Authorizer
+  # -----------------------
+  VdcHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${ProjectName}-${EnvironmentName}-http-api"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowCredentials: false
+        AllowHeaders:
+          - authorization
+          - content-type
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowOrigins:
+          - "*"
+
+  VdcJwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      AuthorizerType: JWT
+      IdentitySource:
+        - "$request.header.Authorization"
+      JwtConfiguration:
+        Audience:
+          - !Ref CognitoClientId
+        Issuer: !Ref CognitoIssuerUrl
+      Name: !Sub "cognito-vdc-${EnvironmentName}"
+
+  # Integrations
+  UploadInitIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt UploadInitLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  SubmitIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SubmitLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  PendingApprovalsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt PendingApprovalsLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  ApproveIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApproveLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  RejectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt RejectLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  DownloadIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt DownloadLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  DocumentsListIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt DocumentsListLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  DocumentAuditIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt DocumentAuditLambda.Arn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+      TimeoutInMillis: 30000
+
+  # Routes (from your DEV API export)
+  UploadInitRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /documents/upload/init"
+      Target: !Sub "integrations/${UploadInitIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  SubmitRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /documents/submit"
+      Target: !Sub "integrations/${SubmitIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  PendingApprovalsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "GET /approvals/pending"
+      Target: !Sub "integrations/${PendingApprovalsIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  ApproveRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /approvals/{documentId}/approve"
+      Target: !Sub "integrations/${ApproveIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  RejectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "POST /approvals/{documentId}/reject"
+      Target: !Sub "integrations/${RejectIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  DocumentsListRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "GET /documents"
+      Target: !Sub "integrations/${DocumentsListIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  DownloadRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "GET /documents/{documentId}/download"
+      Target: !Sub "integrations/${DownloadIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  DocumentAuditRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      RouteKey: "GET /documents/{documentId}/audit"
+      Target: !Sub "integrations/${DocumentAuditIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref VdcJwtAuthorizer
+
+  VdcApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref VdcHttpApi
+      StageName: "$default"
+      AutoDeploy: true
+
+  # Lambda permissions (API Gateway invoke)
+  UploadInitLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UploadInitLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  SubmitLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SubmitLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  PendingApprovalsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PendingApprovalsLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  ApproveLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApproveLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  RejectLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RejectLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  DownloadLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DownloadLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  DocumentsListLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DocumentsListLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+  DocumentAuditLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DocumentAuditLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VdcHttpApi}/*/*"
+
+Outputs:
+  ApiBaseUrl:
+    Value: !Sub "https://${VdcHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  DocsBucketName:
+    Value: !Ref VdcDocsBucket
+  AuditWormBucketName:
+    Value: !Ref VdcAuditWormBucket
+  DocumentsTableName:
+    Value: !Ref VdcDocumentsTable
+  AuditTableName:
+    Value: !Ref VdcAuditTable

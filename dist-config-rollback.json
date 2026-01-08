@@ -1,0 +1,110 @@
+{
+    "CallerReference":  "4e9b7914-143d-4aad-b5c4-fa9ff534607c",
+    "Aliases":  {
+                    "Quantity":  2,
+                    "Items":  [
+                                  "williamoconnellpmp.com",
+                                  "www.williamoconnellpmp.com"
+                              ]
+                },
+    "DefaultRootObject":  "index.html",
+    "Origins":  {
+                    "Quantity":  1,
+                    "Items":  [
+                                  {
+                                      "Id":  "ls-cloud-migration-hub-williamoconnellpmp.s3.us-west-2.amazonaws.com-mjl3bf5m5gj",
+                                      "DomainName":  "ls-cloud-migration-hub-williamoconnellpmp.s3.us-west-2.amazonaws.com",
+                                      "OriginPath":  "",
+                                      "CustomHeaders":  {
+                                                            "Quantity":  0
+                                                        },
+                                      "S3OriginConfig":  {
+                                                             "OriginAccessIdentity":  "",
+                                                             "OriginReadTimeout":  30
+                                                         },
+                                      "ConnectionAttempts":  3,
+                                      "ConnectionTimeout":  10,
+                                      "OriginShield":  {
+                                                           "Enabled":  false
+                                                       },
+                                      "OriginAccessControlId":  "EKB1N3S6K9GJK"
+                                  }
+                              ]
+                },
+    "OriginGroups":  {
+                         "Quantity":  0
+                     },
+    "DefaultCacheBehavior":  {
+                                 "TargetOriginId":  "ls-cloud-migration-hub-williamoconnellpmp.s3.us-west-2.amazonaws.com-mjl3bf5m5gj",
+                                 "TrustedSigners":  {
+                                                        "Enabled":  false,
+                                                        "Quantity":  0
+                                                    },
+                                 "TrustedKeyGroups":  {
+                                                          "Enabled":  false,
+                                                          "Quantity":  0
+                                                      },
+                                 "ViewerProtocolPolicy":  "redirect-to-https",
+                                 "AllowedMethods":  {
+                                                        "Quantity":  2,
+                                                        "Items":  [
+                                                                      "HEAD",
+                                                                      "GET"
+                                                                  ],
+                                                        "CachedMethods":  {
+                                                                              "Quantity":  2,
+                                                                              "Items":  [
+                                                                                            "HEAD",
+                                                                                            "GET"
+                                                                                        ]
+                                                                          }
+                                                    },
+                                 "SmoothStreaming":  false,
+                                 "Compress":  true,
+                                 "LambdaFunctionAssociations":  {
+                                                                    "Quantity":  0
+                                                                },
+                                 "FunctionAssociations":  {
+                                                              "Quantity":  0
+                                                          },
+                                 "FieldLevelEncryptionId":  "",
+                                 "CachePolicyId":  "658327ea-f89d-4fab-a63d-7e88639e58f6",
+                                 "GrpcConfig":  {
+                                                    "Enabled":  false
+                                                }
+                             },
+    "CacheBehaviors":  {
+                           "Quantity":  0
+                       },
+    "CustomErrorResponses":  {
+                                 "Quantity":  0
+                             },
+    "Comment":  "",
+    "Logging":  {
+                    "Enabled":  false,
+                    "IncludeCookies":  false,
+                    "Bucket":  "",
+                    "Prefix":  ""
+                },
+    "PriceClass":  "PriceClass_All",
+    "Enabled":  true,
+    "ViewerCertificate":  {
+                              "CloudFrontDefaultCertificate":  false,
+                              "ACMCertificateArn":  "arn:aws:acm:us-east-1:391611737316:certificate/3bfdeacd-b5c2-419a-8115-47547a3020d1",
+                              "SSLSupportMethod":  "sni-only",
+                              "MinimumProtocolVersion":  "TLSv1.2_2021",
+                              "Certificate":  "arn:aws:acm:us-east-1:391611737316:certificate/3bfdeacd-b5c2-419a-8115-47547a3020d1",
+                              "CertificateSource":  "acm"
+                          },
+    "Restrictions":  {
+                         "GeoRestriction":  {
+                                                "RestrictionType":  "none",
+                                                "Quantity":  0
+                                            }
+                     },
+    "WebACLId":  "arn:aws:wafv2:us-east-1:391611737316:global/webacl/CreatedByCloudFront-780ef8fe/63c8faee-b0a6-4b65-b99f-58725e43f900",
+    "HttpVersion":  "http2",
+    "IsIPV6Enabled":  true,
+    "ContinuousDeploymentPolicyId":  "",
+    "Staging":  false
+}

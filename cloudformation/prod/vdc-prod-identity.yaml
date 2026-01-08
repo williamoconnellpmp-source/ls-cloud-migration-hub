@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "VDC PROD Identity (Cognito User Pool, App Client, Hosted UI domain)"
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    AllowedValues: ["prod"]
+    Default: "prod"
+
+  HostedDomainPrefix:
+    Type: String
+    Description: "Cognito Hosted UI domain prefix (e.g., vdc-prod-williamoconnellpmp)"
+    Default: "vdc-prod-williamoconnellpmp"
+
+  CallbackUrls:
+    Type: String
+    Description: "Comma-delimited callback URLs"
+    Default: "http://localhost:3000/life-sciences/app/login,https://williamoconnellpmp.com/life-sciences/app/login"
+
+  LogoutUrls:
+    Type: String
+    Description: "Comma-delimited logout URLs"
+    Default: "http://localhost:3000/life-sciences/app/login,https://williamoconnellpmp.com/life-sciences/app/login"
+
+Resources:
+  VdcUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "vdc-${EnvironmentName}-userpool"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+
+      # Keep MFA OPTIONAL initially (per your requirement); we enforce Approver MFA at the app layer when ready.
+      MfaConfiguration: OPTIONAL
+
+      EnabledMfas:
+        - SOFTWARE_TOKEN_MFA
+
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+      UserPoolAddOns:
+        AdvancedSecurityMode: ENFORCED
+
+  VdcUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "vdc-${EnvironmentName}-appclient"
+      UserPoolId: !Ref VdcUserPool
+      GenerateSecret: false
+
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+
+      SupportedIdentityProviders:
+        - COGNITO
+
+      CallbackURLs: !Split [",", !Ref CallbackUrls]
+      LogoutURLs: !Split [",", !Ref LogoutUrls]
+
+      PreventUserExistenceErrors: ENABLED
+
+  VdcHostedDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref HostedDomainPrefix
+      UserPoolId: !Ref VdcUserPool
+
+Outputs:
+  CognitoUserPoolId:
+    Value: !Ref VdcUserPool
+
+  CognitoAppClientId:
+    Value: !Ref VdcUserPoolClient
+
+  CognitoIssuerUrl:
+    Value: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${VdcUserPool}"
+
+  CognitoHostedUiBaseUrl:
+    Value: !Sub "https://${HostedDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"

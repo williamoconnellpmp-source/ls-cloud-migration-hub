@@ -1,0 +1,12 @@
+{
+  "version":"1.0",
+  "context": { "eventType":"viewer-request" },
+  "viewer": { "ip":"203.0.113.1" },
+  "request": {
+    "method":"GET",
+    "uri":"/vdc/",
+    "headers": {
+      "host": { "value":"williamoconnellpmp.com" }
+    }
+  }
+}

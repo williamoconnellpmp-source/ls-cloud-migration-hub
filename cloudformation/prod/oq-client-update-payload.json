@@ -1,0 +1,24 @@
+{
+    "SupportedIdentityProviders":  [
+                                       "COGNITO"
+                                   ],
+    "AllowedOAuthFlowsUserPoolClient":  true,
+    "AllowedOAuthFlows":  [
+                              "code"
+                          ],
+    "LogoutURLs":  [
+                       "http://localhost:3000/vdc",
+                       "https://williamoconnellpmp.com/vdc/index.html"
+                   ],
+    "CallbackURLs":  [
+                         "http://localhost:3000/vdc",
+                         "https://williamoconnellpmp.com/vdc/index.html"
+                     ],
+    "ClientId":  "7qbh0bvokedaou09huur281ti9",
+    "UserPoolId":  "us-west-2_aQd9shIdg",
+    "AllowedOAuthScopes":  [
+                               "openid",
+                               "email",
+                               "profile"
+                           ]
+}

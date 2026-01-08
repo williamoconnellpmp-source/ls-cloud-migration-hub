@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Shell } from "../../index";
-import { apiFetch } from "../../../lib/life_sciences_lib/api";
-import { requireAuthOrRedirect } from "../../../lib/life_sciences_lib/auth";
+import { apiFetch } from "../../_lib/api";
+import { requireAuthOrRedirect } from "../../_lib/auth";
 
 
 function filenameFromItem(it) {

@@ -22,3 +22,10 @@ Thumbs.db
 
 # misc
 *.log
+
+# Local backups
+backup/
+*.BACKUP
+*.WRONG-BACKUP
+*.UNSTYLED-BACKUP
+temp-*.js

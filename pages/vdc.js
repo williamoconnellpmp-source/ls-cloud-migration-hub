@@ -1,8 +1,8 @@
-import Head from "next/head";
+﻿import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
 
-function CopyIconButton({ value, ariaLabel = "Copy", className = "" }) {
+function CopyIconButton({ value, ariaLabel }) {
   const [copied, setCopied] = useState(false);
 
   async function onCopy() {
@@ -10,54 +10,42 @@ function CopyIconButton({ value, ariaLabel = "Copy", className = "" }) {
       await navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 900);
-    } catch {
-      // If clipboard is blocked, do nothing (still readable + selectable)
-    }
+    } catch (err) {}
   }
 
   return (
-    <button
-      type="button"
-      onClick={onCopy}
-      aria-label={ariaLabel}
-      title={copied ? "Copied" : "Copy"}
-      className={
-        "inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-700 bg-slate-900/40 hover:bg-slate-900/70 transition text-slate-200 " +
-        className
-      }
-    >
-      {/* copy icon */}
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        className="opacity-90"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
+    <>
+      <button type="button" onClick={onCopy} aria-label={ariaLabel} title={copied ? "Copied" : "Copy"} className="copyBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      <style jsx>{`
+        .copyBtn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(15,23,42,0.4);
+          color: rgba(255,255,255,0.9);
+          cursor: pointer;
+          transition: background 0.2s;
+          margin-left: 6px;
+        }
+        .copyBtn:hover {
+          background: rgba(15,23,42,0.7);
+        }
+      `}</style>
+    </>
   );
 }
 
 export default function VDCDemoPage() {
-  // DEV login URL you provided (opens in new tab)
-  const VDC_LOGIN_URL =
-    "https://us-west-2msxjhh4dx.auth.us-west-2.amazoncognito.com/login?client_id=34k1l9ipn52cksnj1gesbe2fto&response_type=code&scope=openid+email+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Flife-sciences%2Fapp%2Flogin";
-
-  // Demo credentials (one Submitter + one Approver shown inline)
+  const VDC_LOGIN_URL = "https://us-west-2msxjhh4dx.auth.us-west-2.amazoncognito.com/login?client_id=34k1l9ipn52cksnj1gesbe2fto&response_type=code&scope=openid+email+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Flife-sciences%2Fapp%2Flogin";
   const SUBMITTER_EMAIL = "williamoconnellpmp+submitter1@gmail.com";
   const APPROVER_EMAIL = "williamoconnellpmp+approver1@gmail.com";
   const PASSWORD = "Password123!";
@@ -65,136 +53,105 @@ export default function VDCDemoPage() {
   return (
     <>
       <Head>
-        <title>VDC Demo — Validated Document Control</title>
-        <meta
-          name="description"
-          content="Validated Document Control (VDC) demo on AWS showing regulated document workflows with audit-ready evidence using serverless infrastructure."
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>VDC Demo - Validated Document Control</title>
+        <meta name="description" content="Validated Document Control demo on AWS"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
       </Head>
 
-      {/* MATCH Empathy Filter layout + colors */}
-      <main className="min-h-screen bg-slate-950 text-slate-50 px-6 py-10">
-        <div className="max-w-5xl mx-auto space-y-10">
-          {/* Top nav (clean, no extra section below) */}
-          <header className="text-sm text-slate-300">
-            <nav className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <Link href="/" className="underline hover:text-indigo-300">
-                Home
-              </Link>
-              <span className="text-slate-600">|</span>
-              <Link
-                href="/life-sciences/evidence"
-                className="underline hover:text-indigo-300"
-              >
-                Architecture &amp; GxP Evidence / Artifacts
-              </Link>
-              <span className="text-slate-600">|</span>
-              <Link
-                href="/life-sciences/resources"
-                className="underline hover:text-indigo-300"
-              >
-                Supporting Documentation
-              </Link>
+      <div className="page">
+        <div className="heroBg" aria-hidden="true"/>
+        
+        <main className="mainContent">
+          <div className="container">
+            <nav className="breadcrumb">
+              <Link href="/" className="breadcrumbLink">Home</Link>
+              <span className="sep">|</span>
+              <Link href="/life-sciences/evidence" className="breadcrumbLink">Architecture &amp; GxP Evidence</Link>
+              <span className="sep">|</span>
+              <Link href="/life-sciences/resources" className="breadcrumbLink">Supporting Documentation</Link>
             </nav>
-          </header>
 
-          {/* Hero */}
-          <section className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-              Why a Validated Document Control Demo?
-            </h1>
-
-            <p className="text-slate-300 text-sm sm:text-base">
-              A production-style AWS environment showing how regulated document workflows can be designed with
-              audit-ready evidence using serverless infrastructure.
-            </p>
-
-            {/* Main box (same sizing + styling as Empathy Filter) */}
-            <div className="mt-4 bg-slate-900/70 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4 text-sm sm:text-base leading-relaxed">
-              <p>
-                In regulated Life Sciences environments, teams must be able to show who performed an action,
-                when it occurred, under which role, and what controls enforced it — and produce that evidence on
-                demand.
+            <section className="hero">
+              <h1 className="h1">Why a Validated Document Control Demo?</h1>
+              <p className="subtitle">
+                A production-style AWS environment showing how regulated document workflows can be designed with audit-ready evidence using serverless infrastructure.
               </p>
 
-              <p>
-                This VDC demo is a working example using native AWS services. It demonstrates role-based access,
-                MFA-enforced approvals, controlled document access, immutable audit trails, and electronic
-                signature intent — implemented as a real system, not documentation.
-              </p>
+              <div className="infoBox">
+                <p>
+                  In regulated Life Sciences environments, teams must be able to show who performed an action, when it occurred, under which role, and what controls enforced it.
+                </p>
+                <p>
+                  This VDC demo is a working example using native AWS services. It demonstrates role-based access, MFA-enforced approvals, controlled document access, immutable audit trails, and electronic signature intent.
+                </p>
 
-              <p>
-                <span className="font-semibold">How to use it:</span>{" "}
-                Sign in as a Submitter{" "}
-                <span className="whitespace-nowrap">
-                  (
-                  <span className="text-slate-300">Email </span>
-                  <span className="text-indigo-300 underline underline-offset-2">
-                    {SUBMITTER_EMAIL}
-                  </span>{" "}
-                  <CopyIconButton value={SUBMITTER_EMAIL} ariaLabel="Copy submitter email" />
-                  <span className="text-slate-500 mx-2">·</span>
-                  <span className="text-slate-300">Password </span>
-                  <span className="text-indigo-300 underline underline-offset-2">
-                    {PASSWORD}
-                  </span>{" "}
-                  <CopyIconButton value={PASSWORD} ariaLabel="Copy password" />)
-                </span>
-                , submit a document, then sign in as an Approver{" "}
-                <span className="whitespace-nowrap">
-                  (
-                  <span className="text-slate-300">Email </span>
-                  <span className="text-indigo-300 underline underline-offset-2">
-                    {APPROVER_EMAIL}
-                  </span>{" "}
-                  <CopyIconButton value={APPROVER_EMAIL} ariaLabel="Copy approver email" />
-                  <span className="text-slate-500 mx-2">·</span>
-                  <span className="text-slate-300">Password </span>
-                  <span className="text-indigo-300 underline underline-offset-2">
-                    {PASSWORD}
-                  </span>{" "}
-                  <CopyIconButton value={PASSWORD} ariaLabel="Copy password again" />)
-                </span>{" "}
-                to approve or reject. Please sign out before switching users.
-              </p>
+                <div className="credentials">
+                  <p>
+                    <strong>How to use it:</strong> Sign in as Submitter: <span className="cred">{SUBMITTER_EMAIL}</span>
+                    <CopyIconButton value={SUBMITTER_EMAIL} ariaLabel="Copy email"/> Password: <span className="cred">{PASSWORD}</span>
+                    <CopyIconButton value={PASSWORD} ariaLabel="Copy password"/>
+                  </p>
+                  <p>
+                    Then sign in as Approver: <span className="cred">{APPROVER_EMAIL}</span>
+                    <CopyIconButton value={APPROVER_EMAIL} ariaLabel="Copy email"/> Password: <span className="cred">{PASSWORD}</span>
+                    <CopyIconButton value={PASSWORD} ariaLabel="Copy password"/>
+                  </p>
+                  <p>Please sign out before switching users.</p>
+                </div>
 
-              <p className="text-slate-400 text-xs sm:text-sm">
-                Built on AWS using Amazon Cognito (Hosted UI), API Gateway (HTTP APIs), AWS Lambda, Amazon
-                DynamoDB, Amazon S3, AWS IAM, and AWS CloudFormation.
-              </p>
-            </div>
-          </section>
+                <p className="techStack">
+                  Built on AWS using Cognito, API Gateway, Lambda, DynamoDB, S3, IAM, and CloudFormation.
+                </p>
+              </div>
+            </section>
 
-          {/* CTA box (same styling as Empathy Filter CTA) */}
-          <section className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-medium">Want to see it in action?</h2>
-              <p className="mt-1 text-slate-300 text-sm">
-                Open the demo, copy the Submitter or Approver email above with password{" "}
-                <span className="text-indigo-300 underline underline-offset-2">{PASSWORD}</span>, run the
-                Submitter → Approver flow, and sign out before changing users.
-              </p>
-            </div>
+            <section className="ctaSection">
+              <div className="ctaContent">
+                <h2 className="ctaTitle">Want to see it in action?</h2>
+                <p className="ctaText">
+                  Open the demo, use the credentials above, run the Submitter to Approver flow, and sign out before changing users.
+                </p>
+              </div>
+              <a href={VDC_LOGIN_URL} target="_blank" rel="noopener noreferrer" className="ctaButton">
+                Go to the Demo →
+              </a>
+            </section>
 
-            <a
-              className="inline-flex items-center justify-center rounded-full bg-indigo-600 hover:bg-indigo-500 px-5 py-2 text-sm font-medium whitespace-nowrap"
-              href={VDC_LOGIN_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Go to the Demo →
-            </a>
-          </section>
+            <footer className="footer">
+              <Link href="/" className="footerLink">← Back to home</Link>
+            </footer>
+          </div>
+        </main>
 
-          {/* Footer (simple, same tone) */}
-          <footer className="text-xs text-slate-500 pt-2 border-t border-slate-900/60">
-            <Link href="/" className="underline hover:text-indigo-300">
-              ← Back to home
-            </Link>
-          </footer>
-        </div>
-      </main>
+        <style jsx>{`
+          .page { min-height: 100vh; position: relative; background: #061428; color: rgba(255,255,255,0.92); }
+          .heroBg { position: absolute; inset: 0; background-image: linear-gradient(180deg, rgba(5,12,22,0.96) 0%, rgba(5,12,22,0.88) 30%, rgba(5,12,22,0.7) 55%, rgba(5,12,22,0.45) 75%, rgba(5,12,22,0.3) 100%), url("/images/heroes/landing-gxp.png"); background-size: cover; background-position: 70% center; }
+          .mainContent { position: relative; z-index: 2; padding: 40px 0 60px; }
+          .container { max-width: 1100px; margin: 0 auto; padding: 0 22px; }
+          .breadcrumb { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+          .breadcrumbLink { color: rgba(255,255,255,0.85); text-decoration: underline; }
+          .breadcrumbLink:hover { color: rgba(139,92,246,0.9); }
+          .sep { color: rgba(255,255,255,0.35); }
+          .hero { margin-bottom: 40px; }
+          .h1 { font-size: clamp(1.9rem, 3.5vw, 2.8rem); font-weight: 750; margin-bottom: 16px; color: #fff; }
+          .subtitle { font-size: 1.05rem; line-height: 1.6; color: rgba(255,255,255,0.75); margin-bottom: 20px; }
+          .infoBox { background: rgba(7,14,24,0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 24px; }
+          .infoBox p { margin-bottom: 16px; line-height: 1.65; color: rgba(255,255,255,0.85); }
+          .credentials { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 18px; margin: 20px 0; }
+          .credentials p { margin-bottom: 10px; line-height: 1.7; }
+          .cred { font-family: monospace; font-size: 0.9rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 6px; }
+          .techStack { font-size: 0.88rem; color: rgba(255,255,255,0.6); font-style: italic; margin: 0; }
+          .ctaSection { background: rgba(7,14,24,0.65); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 40px; }
+          .ctaContent { flex: 1; }
+          .ctaTitle { font-size: 1.15rem; font-weight: 600; margin-bottom: 10px; color: #fff; }
+          .ctaText { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin: 0; }
+          .ctaButton { display: inline-flex; padding: 10px 22px; border-radius: 999px; background: rgb(99,102,241); color: #fff; font-weight: 600; text-decoration: none; }
+          .ctaButton:hover { background: rgb(79,70,229); }
+          .footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+          .footerLink { color: rgba(255,255,255,0.7); text-decoration: underline; }
+          @media (max-width: 768px) { .ctaSection { flex-direction: column; } }
+        `}</style>
+      </div>
     </>
   );
 }

@@ -1,0 +1,11 @@
+{
+  "Name": "ls-cloud-migration-hub-oac",
+  "Description": "Origin Access Control for ls-cloud-migration-hub S3 bucket",
+  "OriginAccessControlConfig": {
+    "Name": "ls-cloud-migration-hub-oac",
+    "Description": "OAC for Next.js static site",
+    "SigningProtocol": "sigv4",
+    "SigningBehavior": "always",
+    "OriginAccessControlOriginType": "s3"
+  }
+}

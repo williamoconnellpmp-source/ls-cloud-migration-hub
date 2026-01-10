@@ -69,7 +69,7 @@ export default function HomePage() {
             <div className="cardsContainer">
               <div className="cardsGrid">
                 {/* 1 — VDC Demo */}
-                <Link href="/vdc/index.html" passHref legacyBehavior>
+                <Link href="/vdc" passHref legacyBehavior>
                   <a className="card">
                     <div className="cardTitle">VDC Demo</div>
                     <div className="cardText">
@@ -82,7 +82,7 @@ export default function HomePage() {
                 </Link>
 
                 {/* 2 — Regulated Delivery */}
-                <Link href="/life-sciences/evidence/index.html" passHref legacyBehavior>
+                <Link href="/life-sciences/evidence" passHref legacyBehavior>
                   <a className="card">
                     <div className="cardTitle">Regulated Delivery</div>
                     <div className="cardText">GxP • 21 CFR Part 11 • CSV</div>
@@ -108,7 +108,7 @@ export default function HomePage() {
                   role="group"
                   aria-label="Resume and external links"
                 >
-                  <Link href="/resume/index.html" passHref legacyBehavior>
+                  <Link href="/resume" passHref legacyBehavior>
                     <a className="linkItem">Resume →</a>
                   </Link>
 
@@ -331,4 +331,3 @@ export default function HomePage() {
     </>
   );
 }
-

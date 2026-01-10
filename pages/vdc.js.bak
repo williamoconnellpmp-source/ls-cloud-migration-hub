@@ -1,4 +1,4 @@
-import Head from "next/head";
+﻿import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
 import { buildLoginUrl } from "../lib/life_sciences_app_lib/auth";
@@ -68,9 +68,9 @@ export default function VDCDemoPage() {
             <nav className="breadcrumb">
               <Link href="/" className="breadcrumbLink">Home</Link>
               <span className="sep">|</span>
-              <Link href="/life-sciences/evidence/index.html" className="breadcrumbLink">Architecture &amp; GxP Evidence</Link>
+              <Link href="/life-sciences/evidence" className="breadcrumbLink">Architecture &amp; GxP Evidence</Link>
               <span className="sep">|</span>
-              <Link href="/life-sciences/resources/index.html" className="breadcrumbLink">Supporting Documentation</Link>
+              <Link href="/life-sciences/resources" className="breadcrumbLink">Supporting Documentation</Link>
             </nav>
 
             <section className="hero">
@@ -115,12 +115,12 @@ export default function VDCDemoPage() {
                 </p>
               </div>
               <a href={VDC_LOGIN_URL} target="_blank" rel="noopener noreferrer" className="ctaButton">
-                Go to the Demo ?
+                Go to the Demo →
               </a>
             </section>
 
             <footer className="footer">
-              <Link href="/" className="footerLink">? Back to home</Link>
+              <Link href="/" className="footerLink">← Back to home</Link>
             </footer>
           </div>
         </main>

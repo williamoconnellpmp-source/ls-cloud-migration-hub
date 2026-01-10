@@ -15,9 +15,9 @@ export default function Layout({ title, subtitle, children }) {
           </div>
 
           <nav className="nav" aria-label="Primary navigation">
-            <Link href="/life-sciences/index.html" className="navLink">Life Sciences Hub</Link>
+            <Link href="/life-sciences" className="navLink">Life Sciences Hub</Link>
             <span className="navSep">·</span>
-            <Link href="/resume/index.html" className="navLink">Resume</Link>
+            <Link href="/resume" className="navLink">Resume</Link>
             <span className="navSep">·</span>
             <Link href="/empathy-filter" className="navLink">Empathy Filter</Link>
             <span className="navSep">·</span>
@@ -132,4 +132,3 @@ export default function Layout({ title, subtitle, children }) {
     </div>
   );
 }
-

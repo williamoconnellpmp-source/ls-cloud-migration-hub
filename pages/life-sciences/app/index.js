@@ -72,7 +72,7 @@ function Shell({ title, children }) {
 
     setUserEmail(email);
     setUserName(name);
-  }, []);
+  }, [router]);
 
   const isApprover = useMemo(
     () => groups.includes("Approver") || groups.includes("Approvers"),

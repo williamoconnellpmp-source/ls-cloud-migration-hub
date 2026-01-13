@@ -9,8 +9,6 @@ import {
   getTokens,
   getUserGroupsFromIdToken,
   parseJwt,
-  requireAuthOrRedirect,
-  isExpired,
 } from "@/lib/life_sciences_app_lib/auth";
 
 function truncateMiddle(s, max = 28) {
@@ -49,19 +47,14 @@ function Shell({ title, children }) {
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    // Check if we have valid tokens before triggering re-auth
+    // Just get user info from existing tokens, don't trigger re-auth here
     const tokens = getTokens();
-    if (!tokens?.access_token || isExpired(tokens.access_token)) {
-      // Only redirect if tokens are actually missing or expired
-      requireAuthOrRedirect(router);
-      return;
-    }
+    if (!tokens?.id_token) return; // No tokens yet, wait
 
-    // We have valid tokens, proceed with getting user info
-    const idToken = tokens?.id_token;
+    const idToken = tokens.id_token;
     setGroups(getUserGroupsFromIdToken(idToken));
 
-    const claims = idToken ? parseJwt(idToken) : null;
+    const claims = parseJwt(idToken);
     const email = claims?.email || "";
     const name =
       claims?.name ||
@@ -72,7 +65,7 @@ function Shell({ title, children }) {
 
     setUserEmail(email);
     setUserName(name);
-  }, [router]);
+  }, []); // Empty dependency array - run once on mount
 
   const isApprover = useMemo(
     () => groups.includes("Approver") || groups.includes("Approvers"),

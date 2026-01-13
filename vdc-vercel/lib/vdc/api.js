@@ -1,4 +1,4 @@
-﻿// pages/life-sciences/app/_lib/api.js
+// pages/life-sciences/app/_lib/api.js
 
 import { CONFIG } from "./config";
 import { getTokens, isExpired, clearTokens, buildLoginUrl } from "./auth";
@@ -14,7 +14,7 @@ export class ApiError extends Error {
 
 function redirectToLogin() {
   clearTokens();
-  (async()=>{ window.location.href = await buildLoginUrl(); })();
+  window.location.href = buildLoginUrl();
 }
 
 export async function apiFetch(path, options = {}) {

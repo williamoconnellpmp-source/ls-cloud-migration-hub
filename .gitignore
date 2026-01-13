@@ -29,3 +29,5 @@ backup/
 *.WRONG-BACKUP
 *.UNSTYLED-BACKUP
 temp-*.js
+
+_local_backups/

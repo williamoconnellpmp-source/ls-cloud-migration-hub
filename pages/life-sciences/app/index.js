@@ -10,6 +10,7 @@ import {
   getUserGroupsFromIdToken,
   parseJwt,
   requireAuthOrRedirect,
+  isExpired,
 } from "@/lib/life_sciences_app_lib/auth";
 
 function truncateMiddle(s, max = 28) {
@@ -48,13 +49,16 @@ function Shell({ title, children }) {
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    // Require auth for everything in /life-sciences/app/*
-    const ok = requireAuthOrRedirect(router);
-    if (!ok) return;
-
+    // Check if we have valid tokens before triggering re-auth
     const tokens = getTokens();
-    const idToken = tokens?.id_token;
+    if (!tokens?.access_token || isExpired(tokens.access_token)) {
+      // Only redirect if tokens are actually missing or expired
+      requireAuthOrRedirect(router);
+      return;
+    }
 
+    // We have valid tokens, proceed with getting user info
+    const idToken = tokens?.id_token;
     setGroups(getUserGroupsFromIdToken(idToken));
 
     const claims = idToken ? parseJwt(idToken) : null;
@@ -214,4 +218,3 @@ export default function AppHome() {
 }
 
 export { Shell };
-

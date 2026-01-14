@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import { CONFIG } from "@/lib/life_sciences_app_lib/config";
 import { exchangeCodeForTokens, buildLoginUrl } from "@/lib/life_sciences_app_lib/auth";
@@ -7,8 +7,13 @@ export default function LoginPage() {
   const router = useRouter();
   const [status, setStatus] = useState("Waiting for login...");
   const [error, setError] = useState(null);
+  const hasRun = useRef(false);
 
   useEffect(() => {
+    // Prevent double-execution (React strict mode, router changes, etc.)
+    if (hasRun.current) return;
+    hasRun.current = true;
+
     // Static-export friendly: parse directly from the real URL
     const params = new URLSearchParams(window.location.search);
 
@@ -47,13 +52,14 @@ export default function LoginPage() {
         await exchangeCodeForTokens(String(code));
 
         setStatus("Login successful. Redirecting...");
-        router.replace("/life-sciences/app");
+        // Use window.location instead of router.replace to force full page load
+        window.location.href = "/life-sciences/app";
       } catch (e) {
         setStatus("Token exchange failed.");
         setError(e?.message || String(e));
       }
     })();
-  }, [router]);
+  }, []);
 
   return (
     <div

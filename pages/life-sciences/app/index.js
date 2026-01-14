@@ -157,11 +157,18 @@ function Shell({ title, children }) {
 
 export default function AppHome() {
   const [hasToken, setHasToken] = useState(false);
+  const [loginUrl, setLoginUrl] = useState("");
 
   useEffect(() => {
     const tokens = getTokens();
     // Prefer id_token for "logged in" signal (more reliable for email/groups)
     setHasToken(Boolean(tokens?.id_token || tokens?.access_token));
+
+    // Build login URL for the link
+    (async () => {
+      const url = await buildLoginUrl();
+      setLoginUrl(url);
+    })();
   }, []);
 
   return (
@@ -170,7 +177,7 @@ export default function AppHome() {
         <div style={{ padding: "1rem", border: "1px solid #ccc", borderRadius: 12 }}>
           <p style={{ marginTop: 0 }}>You are not signed in.</p>
           <a
-            href={buildLoginUrl()}
+            href={loginUrl}
             style={{
               display: "inline-block",
               textDecoration: "none",

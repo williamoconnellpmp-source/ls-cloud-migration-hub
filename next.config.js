@@ -1,7 +1,7 @@
 ﻿/** @type {import("next").NextConfig} */
 const nextConfig = {
   output: "standalone",
-  trailingSlash: true,
+  trailingSlash: false,
   images: { unoptimized: true },
 };
 
